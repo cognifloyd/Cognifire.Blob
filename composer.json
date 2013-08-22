@@ -1,0 +1,12 @@
+{
+	"name":"cognifire\/blob",
+	"type":"typo3-flow-package",
+	"description":null,
+	"require":{
+		"typo3\/flow":"*"
+	},
+	"autoload":{
+		"psr-0":{
+			"Cognifire\\Blob":"Classes"}
+	}
+}
