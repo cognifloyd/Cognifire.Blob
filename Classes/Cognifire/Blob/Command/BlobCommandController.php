@@ -6,12 +6,15 @@ namespace Cognifire\Blob\Command;
  *                                                                        *
  *                                                                        */
 
+use Cognifire\Blob\BlobQuery;
+use Cognifire\Blob\Derivative;
 use TYPO3\Flow\Annotations as Flow;
+use TYPO3\Flow\Cli\CommandController;
 
 /**
  * @Flow\Scope("singleton")
  */
-class CopytestCommandController extends \TYPO3\Flow\Cli\CommandController {
+class BlobCommandController extends CommandController {
 
 	/**
 	 * An example command
@@ -23,14 +26,34 @@ class CopytestCommandController extends \TYPO3\Flow\Cli\CommandController {
 	 * It is important to document the parameters with param tags, because that information will also appear in the help
 	 * screen.
 	 *
-	 * @param string $requiredArgument This argument is required
-	 * @param string $optionalArgument This argument is optional
 	 * @return void
 	 */
-	public function exampleCommand($requiredArgument, $optionalArgument = NULL) {
-		$this->outputLine('You called the example command and passed "%s" as the first argument.', array($requiredArgument));
+	public function exampleCommand() {
+		$this->outputLine('"Out damned spot!" --Lady MacBeth');
 	}
 
+	/**
+	 * copy file test
+	 *
+	 * this should copy a file.
+	 *
+	 * @return void
+	 */
+	public function copyTestCommand() {
+		$d = new Derivative('Cognifire.EmptyBoilerplate','Configuration/','text/plain');
+		$this->outputLine("key: " . $d);
+		//$this->outputLine(print_r($d->introspect(), TRUE));
+		$d = new Derivative();
+		$this->outputLine("key: " . $d);
+	}
+
+	public function newDerivativeCommand() {
+		$d = new Derivative('Cognifire.EmptyBoilerplate','Configuration/','text/plain');
+		$this->outputLine("with key: " . $d);
+		$d = new Derivative();
+		$this->outputLine("without key: " . $d);
+		$this->outputLine(scandir($d->getAbsolutePath()));
+	}
 }
 
 ?>
