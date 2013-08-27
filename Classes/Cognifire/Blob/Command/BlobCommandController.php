@@ -40,7 +40,7 @@ class BlobCommandController extends CommandController {
 	 * @return void
 	 */
 	public function copyTestCommand() {
-		$d = new Derivative('Cognifire.EmptyBoilerplate','Configuration/','text/plain');
+		$d = new Derivative('Cognifire.Blob','Configuration/','text/plain');
 		$this->outputLine("key: " . $d);
 		$this->outputLine(print_r($d->introspect(), TRUE));
 		//$d = new Derivative();
@@ -48,7 +48,7 @@ class BlobCommandController extends CommandController {
 	}
 
 	public function newDerivativeCommand() {
-		$d = new Derivative('Cognifire.EmptyBoilerplate','Configuration/','text/plain');
+		$d = new Derivative('Cognifire.Blob','Configuration/','text/plain');
 		$this->outputLine("with key: " . $d);
 		$this->outputLine($d->getAbsolutePath());
 

@@ -50,18 +50,19 @@ class Derivative {
 	protected $absolutePath = '';
 
 	/**
-	 * @param string $derivativeKey The identifier for this derivative
-	 * @param mixed|string|array  $paths the FlowQuery object will only have blobs from these paths
-	 * @param string $type the FlowQuery object will only have blobs of this type
+	 * @param string             $derivativeKey The identifier for this derivative
+	 * @param mixed|string|array $paths         the FlowQuery object will only have blobs from these paths
+	 * @param string             $type          the FlowQuery object will only have blobs of this type
+	 * @param PackageManagerInterface $packageManager
 	 */
-	public function __construct($derivativeKey = '', $paths = array(), $type = '') {
+	public function __construct($derivativeKey = '', $paths = array(), $type = '', PackageManagerInterface $packageManager) {
+		$this->packageManager = $packageManager;
 		if($derivativeKey === '') {
 			$derivativeKey = '@' . Algorithms::generateUUID();
 			$this->absolutePath = Files::concatenatePaths(array(FLOW_PATH_DATA, 'Blob', $derivativeKey));
 			Files::createDirectoryRecursively($this->absolutePath);
 		} else {
-			//$this->absolutePath = $this->packageManager->getPackage($derivativeKey)->getPackagePath();
-			$flowPackage = $this->packageManager->getPackage('TYPO3.Flow');
+			$this->absolutePath = $this->packageManager->getPackage($derivativeKey)->getPackagePath();
 		}
 		$this->derivativeKey = $derivativeKey;
 		if(is_string($paths)) {
@@ -69,10 +70,6 @@ class Derivative {
 		}
 		$this->addPathsFilter($paths);
 		$this->addTypeFilter($type);
-	}
-
-	public function initializeObject() {
-
 	}
 
 	/**
