@@ -14,7 +14,7 @@ namespace Cognifire\Blob;
 
 
 use TYPO3\Flow\Annotations as Flow;
-use TYPO3\Flow\Package\PackageManager;
+use TYPO3\Flow\Package\PackageManagerInterface;
 use TYPO3\Flow\Utility\Algorithms;
 use TYPO3\Flow\Utility\Files;
 
@@ -25,7 +25,7 @@ class Derivative {
 
 	/**
 	 * @Flow\Inject
-	 * @var PackageManager
+	 * @var \TYPO3\Flow\Package\PackageManagerInterface
 	 */
 	protected $packageManager;
 
@@ -60,7 +60,8 @@ class Derivative {
 			$this->absolutePath = Files::concatenatePaths(array(FLOW_PATH_DATA, 'Blob', $derivativeKey));
 			Files::createDirectoryRecursively($this->absolutePath);
 		} else {
-			$this->absolutePath = $this->packageManager->getPackage($derivativeKey)->getPackagePath();
+			//$this->absolutePath = $this->packageManager->getPackage($derivativeKey)->getPackagePath();
+			$flowPackage = $this->packageManager->getPackage('TYPO3.Flow');
 		}
 		$this->derivativeKey = $derivativeKey;
 		if(is_string($paths)) {
@@ -68,6 +69,10 @@ class Derivative {
 		}
 		$this->addPathsFilter($paths);
 		$this->addTypeFilter($type);
+	}
+
+	public function initializeObject() {
+
 	}
 
 	/**
@@ -108,7 +113,8 @@ class Derivative {
 	public function introspect() {
 		return array(
 			"pathFilter" => $this->pathFilter,
-			"typeFilter" => $this->typeFilter
+			"typeFilter" => $this->typeFilter,
+			"pm" => $this->packageManager->getPackage('TYPO3.Flow')
 		);
 	}
 }
