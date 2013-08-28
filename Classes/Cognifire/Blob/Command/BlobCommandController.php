@@ -10,6 +10,7 @@ use Cognifire\Blob\BlobQuery;
 use Cognifire\Blob\Derivative;
 use TYPO3\Flow\Annotations as Flow;
 use TYPO3\Flow\Cli\CommandController;
+use TYPO3\Flow\Utility\Files;
 
 /**
  * @Flow\Scope("singleton")
@@ -28,35 +29,41 @@ class BlobCommandController extends CommandController {
 	 *
 	 * @return void
 	 */
-	public function exampleCommand() {
+	public function notAnEasterEggCommand() {
 		$this->outputLine('"Out damned spot!" --Lady MacBeth');
 	}
 
-	/**
-	 * copy file test
-	 *
-	 * this should copy a file.
-	 *
-	 * @return void
-	 */
+	public function newDerivativeCommand() {
+		$d = new Derivative('Cognifire.Blob','Configuration/','text/plain');
+		$this->outputLine("with key: " . $d);
+		$this->outputLine(print_r($d->getAbsolutePath(), TRUE));
+
+		$d = new Derivative('Cognifire.Example');
+		$this->outputLine("with key: " . $d);
+		$this->outputLine($d->getAbsolutePath());
+		Files::removeDirectoryRecursively($d->getAbsolutePath());
+
+		$d = new Derivative();
+		$this->outputLine("without key: " . $d);
+		$this->outputLine($d->getAbsolutePath());
+		$this->outputLine(print_r(scandir(FLOW_PATH_DATA . '/Blob'), TRUE));
+		Files::removeDirectoryRecursively($d->getAbsolutePath());
+
+		$d = new Derivative('@humbug');
+		$dir = FLOW_PATH_DATA . '/Blob/@humbug';
+		Files::createDirectoryRecursively($dir);
+		$this->outputLine("without key: " . $d);
+		$this->outputLine($d->getAbsolutePath());
+		$this->outputLine(print_r(scandir(FLOW_PATH_DATA . '/Blob'), TRUE));
+		Files::removeDirectoryRecursively($d->getAbsolutePath());
+	}
+
 	public function copyTestCommand() {
 		$d = new Derivative('Cognifire.Blob','Configuration/','text/plain');
 		$this->outputLine("key: " . $d);
 		$this->outputLine(print_r($d->introspect(), TRUE));
 		//$d = new Derivative();
 		//$this->outputLine("key: " . $d);
-	}
-
-	public function newDerivativeCommand() {
-		$d = new Derivative('Cognifire.Blob','Configuration/','text/plain');
-		$this->outputLine("with key: " . $d);
-		$this->outputLine($d->getAbsolutePath());
-
-		/*$d = new Derivative();
-		$this->outputLine("without key: " . $d);
-		$this->outputLine($d->getAbsolutePath());
-		$this->outputLine(print_r(scandir(FLOW_PATH_DATA . '/Blob'), TRUE));
-		*/
 	}
 }
 
