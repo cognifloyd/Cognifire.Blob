@@ -14,10 +14,10 @@ namespace Cognifire\Blob\Domain\Model;
 
 
 use TYPO3\Flow\Annotations as Flow;
-use TYPO3\Flow\Package\PackageManagerInterface;
 use TYPO3\Flow\Utility\Algorithms;
 use TYPO3\Flow\Utility\Files;
 use Cognifire\Blob\Exception;
+use Cognifire\Blob\Package\GenericPackageManagerInterface;
 
 /**
  * The basic Derivative. Most often, this is a package, however it can be a temporary folder as well.
@@ -29,7 +29,7 @@ class Derivative {
 
 	/**
 	 * @Flow\Inject
-	 * @var \TYPO3\Flow\Package\PackageManagerInterface
+	 * @var GenericPackageManagerInterface
 	 */
 	protected $packageManager;
 
@@ -77,7 +77,7 @@ class Derivative {
 	}
 
 	/**
-	 * Initializer for initialization that needs injected properties like PackageManager.
+	 * Initializer for initialization that needs injected properties like GenericPackageManager.
 	 */
 	public function initializeObject() {
 		$this->initializeAbsolutePathAndCreateDirectory();
@@ -102,7 +102,7 @@ class Derivative {
 			if(!$this->packageManager->isPackageAvailable($this->derivativeKey)) {
 				$this->packageManager->createPackage($this->derivativeKey);
 			}
-			$this->absolutePath = $this->packageManager->getPackage($this->derivativeKey)->getPackagePath();
+			$this->absolutePath = $this->packageManager->getPackagePath($this->derivativeKey);
 		}
 		if( $this->absolutePath === '' ) {
 			throw new Exception('Something died, because the absolutePath of the package looks like roadkill.', 1377643412);
