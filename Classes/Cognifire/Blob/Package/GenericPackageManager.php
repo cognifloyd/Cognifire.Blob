@@ -36,6 +36,12 @@ class GenericPackageManager implements GenericPackageManagerInterface {
 	 * An array of IrregularPackageManagers
 	 *
 	 * TODO[cognifloyd] Figure out how to populate this array: ('type-of-package' => IrregularPackageManager).
+	 * Maybe I could do something like:
+	 *   $packageManagers = array(
+	 *     'flow' => flowPackageManager,
+	 *     'TYPO3CMS' => Irregular\Typo3CmsExtensionManager,
+	 *     'Symfony' => A PackageManager that does symfony based packages but implements the IrregularPackageManagerInterface
+	 *   )
 	 *
 	 * @var  array<IrregularPackageManagerInterface>
 	 */
