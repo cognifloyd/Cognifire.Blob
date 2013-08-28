@@ -35,7 +35,7 @@ class BlobCommandController extends CommandController {
 
 	public function newDerivativeCommand() {
 		$d = new Derivative();
-		$this->outputLine("without params: " . $d);
+		$this->outputLine("without key: " . $d);
 		$this->outputLine($d->getAbsolutePath());
 		$this->outputLine(print_r(scandir(FLOW_PATH_DATA . '/Blob'), TRUE));
 		Files::removeDirectoryRecursively($d->getAbsolutePath());
@@ -49,18 +49,17 @@ class BlobCommandController extends CommandController {
 		Files::removeDirectoryRecursively($d->getAbsolutePath());
 
 		$d = new Derivative('Cognifire.Example');
-		$this->outputLine("with pkg key: " . $d);
+		$this->outputLine("with new pkg key: " . $d);
 		$this->outputLine($d->getAbsolutePath());
 		Files::removeDirectoryRecursively($d->getAbsolutePath());
 
-		$d = new Derivative('Cognifire.Blob','Configuration/','text/plain');
-		$this->outputLine("with all params: " . $d);
+		$d = new Derivative('Cognifire.Blob');
+		$this->outputLine("with pkg key exists: " . $d);
 		$this->outputLine(print_r($d->getAbsolutePath(), TRUE));
 	}
 
-	public function copyTestCommand() {
-		$d = new Derivative('Cognifire.Blob','Configuration/','text/plain');
-		$this->outputLine("key: " . $d);
+	public function newBlobQueryCommand() {
+		$d = new BlobQuery('Cognifire.Blob','Configuration/','text/plain');
 		$this->outputLine(print_r($d->introspect(), TRUE));
 	}
 }

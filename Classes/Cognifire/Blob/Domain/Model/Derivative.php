@@ -21,6 +21,9 @@ use Cognifire\Blob\Exception;
 
 /**
  * The basic Derivative. Most often, this is a package, however it can be a temporary folder as well.
+ *
+ * TODO[cognifloyd] If an object with the derivativeKey already exists it should be returned instead of a new one. How do I do that?
+ * @api
  */
 class Derivative {
 
@@ -38,20 +41,6 @@ class Derivative {
 	protected $derivativeKey;
 
 	/**
-	 * The paths that will be provided to the FlowQuery object
-	 *
-	 * @var array
-	 */
-	protected $pathFilter = array();
-
-	/**
-	 * The file or mime types that will be provided to the FlowQuery object
-	 *
-	 * @var array
-	 */
-	protected $typeFilter = array();
-
-	/**
 	 * Path to the directory where this derivative is stored.
 	 *
 	 * @var string
@@ -61,27 +50,30 @@ class Derivative {
 	/**
 	 * Derivative constructor
 	 *
-	 * All parameters are optional. If no parameters are provided, then this derivative will work with a new temporary
-	 * directory under FLOW_PATH_DATA/Data/Blob. By default, this will generate a new Uuid prefixed with '@' as the
-	 * directory's name. You can also specify your own temporary directory name as long as it begins with '@'.
-	 * If the derivativeKey does not begin with '@', it should be a valid Flow package key. The package will be created
-	 * if it does not exist.
+	 * The derivativeKey parameter is optional.
 	 *
-	 * @param string                  $derivativeKey  @api The identifier for this derivative
-	 * @param mixed|string|array      $paths          @api the FlowQuery object will only have blobs from these paths
-	 * @param string                  $type           @api the FlowQuery object will only have blobs of this type
+	 * - If no key is provided, then this derivative will work with a new temporary directory in
+	 *   FLOW_PATH_DATA/Data/Blob. By default, this will generate a new Uuid prefixed with '@' as the directory's name.
+	 *
+	 *     $d = new Derivative();
+	 *
+	 * - You can also specify your own temporary directory name as long as it begins with '@'.
+	 *
+	 *     $d = new Derivative('@directory-name');
+	 *
+	 * - If the derivativeKey does not begin with '@', it should be a valid Flow package key.
+	 *   The package will be created if it does not exist.
+	 *
+	 *     $d = new Derivative('Vendor.PackageName');
+	 *
+	 * @param string                  $derivativeKey  The identifier for this derivative
 	 * @throws Exception
 	 */
-	public function __construct($derivativeKey = '', $paths = array(), $type = '') {
+	public function __construct($derivativeKey = '') {
 		if($derivativeKey === '') {
 			$derivativeKey = '@' . Algorithms::generateUUID();
 		}
 		$this->derivativeKey = $derivativeKey;
-		if(is_string($paths)) {
-			$paths = array($paths);
-		}
-		$this->addPathsFilter($paths);
-		$this->addTypeFilter($type);
 	}
 
 	/**
@@ -118,30 +110,9 @@ class Derivative {
 	}
 
 	/**
-	 * Adds the paths to the filtered paths.
-	 *
-	 * @param $paths array<path strings>
-	 */
-	protected function addPathsFilter(array $paths) {
-		$pathFilter = array();
-		foreach ($paths as $path) {
-			$pathFilter[] = Files::getUnixStylePath($path);
-		}
-		$this->pathFilter = array_merge($this->pathFilter, $pathFilter);
-	}
-
-	/**
-	 * Adds the given file or media type to the list of filtered types
-	 *
-	 * @param $typeFilter string
-	 */
-	protected function addTypeFilter($typeFilter) {
-		$this->typeFilter = array_merge($this->typeFilter, array($typeFilter));
-	}
-
-	/**
 	 * Return the absolutePath to where files of this Derivative is stored.
 	 *
+	 * @api
 	 * @return string
 	 */
 	public function getAbsolutePath() {
@@ -151,6 +122,7 @@ class Derivative {
 	/**
 	 * This will return the derivativeKey as the only string representation that makes sense for a Derivative.
 	 *
+	 * @api
 	 * @return string
 	 */
 	public function __toString() {
@@ -164,8 +136,7 @@ class Derivative {
 	 */
 	public function introspect() {
 		return array(
-			"pathFilter" => $this->pathFilter,
-			"typeFilter" => $this->typeFilter
 		);
 	}
+
 }
