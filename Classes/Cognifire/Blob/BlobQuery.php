@@ -35,7 +35,7 @@ class BlobQuery {
 
 	protected $boilerplateKey;
 
-	protected $files = array();
+	protected $blobs = array();
 
 	/**
 	 * The paths that will be provided to the FlowQuery object
@@ -99,6 +99,15 @@ class BlobQuery {
 	}
 
 	/**
+	 * Creates a FlowQuery with the blobs
+	 *
+	 * @return FlowQuery
+	 */
+	public function getFlowQuery() {
+		return new FlowQuery($this->blobs);
+	}
+
+	/**
 	 * This should return some metadata about what packages, files, etc that have been selected in this BlobQuery.
 	 *
 	 * @return array
@@ -108,7 +117,7 @@ class BlobQuery {
 			"boilerplateKey" => $this->boilerplateKey,
 			"derivative" => '' . $this->derivative, //Get the string representation.
 			"derivativePath" => $this->derivative->getAbsolutePath(),
-			"files" => $this->files,
+			"blobs" => $this->blobs,
 			"pathFilter" => $this->pathFilter,
 			"typeFilter" => $this->typeFilter
 		);
