@@ -1,5 +1,5 @@
 <?php
-namespace Cognifire\Blob;
+namespace Cognifire\Blob\Domain\Model;
 
 /*                                                                        *
  * This script belongs to the TYPO3 Flow package                          *
@@ -17,6 +17,7 @@ use TYPO3\Flow\Annotations as Flow;
 use TYPO3\Flow\Package\PackageManagerInterface;
 use TYPO3\Flow\Utility\Algorithms;
 use TYPO3\Flow\Utility\Files;
+use Cognifire\Blob\Exception;
 
 /**
  * The basic Derivative. Most often, this is a package, however it can be a temporary folder as well.

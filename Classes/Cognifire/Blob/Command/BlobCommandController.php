@@ -7,7 +7,7 @@ namespace Cognifire\Blob\Command;
  *                                                                        */
 
 use Cognifire\Blob\BlobQuery;
-use Cognifire\Blob\Derivative;
+use Cognifire\Blob\Domain\Model\Derivative;
 use TYPO3\Flow\Annotations as Flow;
 use TYPO3\Flow\Cli\CommandController;
 use TYPO3\Flow\Utility\Files;
@@ -34,17 +34,8 @@ class BlobCommandController extends CommandController {
 	}
 
 	public function newDerivativeCommand() {
-		$d = new Derivative('Cognifire.Blob','Configuration/','text/plain');
-		$this->outputLine("with key: " . $d);
-		$this->outputLine(print_r($d->getAbsolutePath(), TRUE));
-
-		$d = new Derivative('Cognifire.Example');
-		$this->outputLine("with key: " . $d);
-		$this->outputLine($d->getAbsolutePath());
-		Files::removeDirectoryRecursively($d->getAbsolutePath());
-
 		$d = new Derivative();
-		$this->outputLine("without key: " . $d);
+		$this->outputLine("without params: " . $d);
 		$this->outputLine($d->getAbsolutePath());
 		$this->outputLine(print_r(scandir(FLOW_PATH_DATA . '/Blob'), TRUE));
 		Files::removeDirectoryRecursively($d->getAbsolutePath());
@@ -52,18 +43,25 @@ class BlobCommandController extends CommandController {
 		$d = new Derivative('@humbug');
 		$dir = FLOW_PATH_DATA . '/Blob/@humbug';
 		Files::createDirectoryRecursively($dir);
-		$this->outputLine("without key: " . $d);
+		$this->outputLine("with temp key: " . $d);
 		$this->outputLine($d->getAbsolutePath());
 		$this->outputLine(print_r(scandir(FLOW_PATH_DATA . '/Blob'), TRUE));
 		Files::removeDirectoryRecursively($d->getAbsolutePath());
+
+		$d = new Derivative('Cognifire.Example');
+		$this->outputLine("with pkg key: " . $d);
+		$this->outputLine($d->getAbsolutePath());
+		Files::removeDirectoryRecursively($d->getAbsolutePath());
+
+		$d = new Derivative('Cognifire.Blob','Configuration/','text/plain');
+		$this->outputLine("with all params: " . $d);
+		$this->outputLine(print_r($d->getAbsolutePath(), TRUE));
 	}
 
 	public function copyTestCommand() {
 		$d = new Derivative('Cognifire.Blob','Configuration/','text/plain');
 		$this->outputLine("key: " . $d);
 		$this->outputLine(print_r($d->introspect(), TRUE));
-		//$d = new Derivative();
-		//$this->outputLine("key: " . $d);
 	}
 }
 
