@@ -1,5 +1,5 @@
 <?php
-namespace Cognifire\Blob\Package\Irregular;
+namespace Cognifire\Blob\Package;
 
 /*                                                                        *
  * This script belongs to the TYPO3 Flow package                          *
@@ -15,6 +15,28 @@ namespace Cognifire\Blob\Package\Irregular;
 
 use TYPO3\Flow\Annotations as Flow;
 
-interface IrregularPackageManagerInterface {
+/**
+ *
+ */
+abstract class AbstractPackageManager implements PackageManagerInterface {
 
+	/**
+	 * The type of packages that this package manager supports
+	 *
+	 * @var string
+	 * @api
+	 */
+	static protected $supportedPackageType = NULL;
+
+	/**
+	 * @throws Exception
+	 * @return string the type of packages that this package manager supports.
+	 * @api
+	 */
+	static public function getPackageManagerType() {
+		if (!is_string(static::$supportedPackageType)) {
+			throw new Exception('Supported package type in class ' . __CLASS__ . ' is empty.', 1377714653);
+		}
+		return static::$supportedPackageType;
+	}
 }

@@ -16,46 +16,64 @@ namespace Cognifire\Blob\Package;
 use TYPO3\Flow\Annotations as Flow;
 
 /**
- * The contract for the GenericPackageManager
+ * An IrregularPackageManager for TYPO3 CMS Extensions
+ *
+ * @Flow\Scope("singleton")
  */
-interface GenericPackageManagerInterface {
+class Typo3CmsExtensionManager extends AbstractPackageManager {
 
 	/**
-	 * Check the conformance of the given package key
+	 * {@inheritdoc}
+	 *
+	 * @var string
+	 */
+	static protected $supportedPackageType = 'TYPO3CMS';
+
+	public function notImplementedYet() {
+		throw new Exception('TYPO3 CMS Extension support is not implemented yet', 1377714343);
+	}
+
+	/**
+	 * {@inheritdoc}
 	 *
 	 * @param string $packageKey The package key to validate
 	 * @return boolean TRUE if the package key is valid, otherwise FALSE
 	 * @api
 	 */
-	public function isPackageKeyValid($packageKey);
+	public function isPackageKeyValid($packageKey) {
+		$this->notImplementedYet();
+	}
 
 	/**
-	 * Returns TRUE if a package is available (the package's files exist in the packages directory)
-	 * or FALSE if it's not. If a package is available it doesn't mean necessarily that it's active!
+	 * {@inheritdoc}
 	 *
 	 * @param string $packageKey The key of the package to check
 	 * @return boolean TRUE if the package is available, otherwise FALSE
 	 * @api
 	 */
-	public function isPackageAvailable($packageKey);
+	public function isPackageAvailable($packageKey) {
+		$this->notImplementedYet();
+	}
 
 	/**
-	 * Create a new package, given the package key
-	 *
-	 * TODO[cognifloyd] This shouldn't return a Flow Package...
+	 * {@inheritdoc}
 	 *
 	 * @param string $packageKey The package key to use for the new package
 	 * @return \TYPO3\Flow\Package\Package The newly created package
 	 * @api
 	 */
-	public function createPackage($packageKey);
+	public function createPackage($packageKey) {
+		$this->notImplementedYet();
+	}
 
 	/**
-	 * Returns the full path to a package, given its packageKey
+	 * {@inheritdoc}
 	 *
 	 * @param  string $packageKey The key of the package
 	 * @return string             Path to the given package's main directory
 	 * @api
 	 */
-	public function getPackagePath($packageKey);
+	public function getPackagePath($packageKey) {
+		$this->notImplementedYet();
+	}
 }

@@ -13,9 +13,9 @@ namespace Cognifire\Blob\Package;
  *                                                                        */
 
 
-use Cognifire\Blob\Package\Irregular\IrregularPackageManagerInterface;
 use TYPO3\Flow\Annotations as Flow;
-use TYPO3\Flow\Package\PackageManagerInterface as FlowPackageManagerInterface;
+use TYPO3\Flow\Object\ObjectManagerInterface;
+use TYPO3\Flow\Reflection\ReflectionService;
 
 /**
  * A GenericPackageManager that works with both Flow Packages and Irregular Packages.
@@ -23,68 +23,80 @@ use TYPO3\Flow\Package\PackageManagerInterface as FlowPackageManagerInterface;
  * For Flow Packages, commands are just routed through Flow's PackageManager.
  * An Irregular Package is a package that is not a Flow Package but still has a particular structure.
  * For Example, an extension for TYPO3.CMS can be an Irregular Package.
+ *
+ * You should use this class instead of the PackageManagerInterface. This class will figure out which PackageManager
+ * to use and pass the calls on to it.
+ *
+ * The logic of this class was inspired by FlowQuery's OperationResolver.
+ *
+ * @Flow\Scope("singleton")
+ * @api
  */
-class GenericPackageManager implements GenericPackageManagerInterface {
+class GenericPackageManager {
 
 	/**
 	 * @Flow\Inject
-	 * @var FlowPackageManagerInterface
+	 * @var ObjectManagerInterface
 	 */
-	protected $flowPackageManager;
+	protected $objectManager;
 
 	/**
-	 * An array of IrregularPackageManagers
-	 *
-	 * TODO[cognifloyd] Figure out how to populate this array: ('type-of-package' => IrregularPackageManager).
-	 * Maybe I could do something like:
-	 *   $packageManagers = array(
-	 *     'flow' => flowPackageManager,
-	 *     'TYPO3CMS' => Irregular\Typo3CmsExtensionManager,
-	 *     'Symfony' => A PackageManager that does symfony based packages but implements the IrregularPackageManagerInterface
-	 *   )
-	 *
-	 * @var  array<IrregularPackageManagerInterface>
+	 * @Flow\Inject
+	 * @var ReflectionService
 	 */
-	protected $irregularPackageManagers = array();
+	protected $reflectionService;
 
 	/**
-	 * {@inheritdoc}
+	 * $packageManagerClasses = array(
+	 *   'flow' => flowPackageManager,
+	 *   'TYPO3CMS' => Irregular\Typo3CmsExtensionManager,
+	 *   'Symfony' => A PackageManager that does symfony based packages but implements the PackageManagerInterface
+	 * )
 	 *
-	 * @param string $packageKey The package key to validate
-	 * @return boolean TRUE if the package key is valid, otherwise FALSE
+	 * @var  array<PackageManagerInterface>
 	 */
-	public function isPackageKeyValid($packageKey) {
-		return $this->flowPackageManager->isPackageKeyValid($packageKey);
+	protected $packageManagerClasses = array();
+
+	/**
+	 * Initializes $this->packageManagerClasses
+	 *
+	 * @throws Exception
+	 */
+	public function initializeObject() {
+		$packageManagerClassNames = $this->reflectionService->getAllImplementationClassNamesForInterface('Cognifire\Blob\Package\PackageManagerInterface');
+		foreach ($packageManagerClassNames as $packageManagerClassName) {
+			/** @var $packageManagerClassName PackageManagerInterface */
+			$supportedPackageType = $packageManagerClassName::getPackageManagerType();
+			if (isset($this->packageManagerClasses[$supportedPackageType])) {
+				throw new Exception(sprintf('%s cannot be registered as the PackageManager for type %s because %s has already been registered for that type.', $packageManagerClassName, $supportedPackageType, $this->packageManagerClasses[$supportedPackageType]), 1377715263);
+			} else {
+				$this->packageManagerClasses[$supportedPackageType] = $packageManagerClassName;
+			}
+		}
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Figures out what kind of package type a package is, and returns the appropriate package manager.
 	 *
-	 * @param string $packageKey The key of the package to check
-	 * @return boolean TRUE if the package is available, otherwise FALSE
+	 * This only returns the FlowPackageManager for now.
+	 * TODO[cognifloyd] Figure out how to determine which package manager to return. Maybe use packageManager->isPackageKeyValid()
+	 *
+	 * @return PackageManagerInterface
 	 */
-	public function isPackageAvailable($packageKey) {
-		return $this->flowPackageManager->isPackageAvailable($packageKey);
+	protected function resolvePackageManager() {
+		return $this->objectManager->get($this->packageManagerClasses['Flow']);
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Calls the method on the appropriate package manager.
 	 *
-	 * @param string $packageKey The package key to use for the new package
-	 * @return \TYPO3\Flow\Package\Package The newly created package
+	 * @param string $method
+	 * @param array  $arguments
+	 * @return mixed
 	 */
-	public function createPackage($packageKey) {
-		return $this->flowPackageManager->createPackage($packageKey);
+	public function __call($method, array $arguments) {
+		$packageManager = $this->resolvePackageManager();
+		return call_user_func_array(array($packageManager,$method),$arguments);
 	}
 
-	/**
-	 * {@inheritdoc}
-	 *
-	 * @param  string $packageKey The key of the package
-	 * @return string             Path to the given package's main directory
-	 * @return string
-	 */
-	public function getPackagePath($packageKey) {
-		return $this->flowPackageManager->getPackage($packageKey)->getPackagePath();
-	}
 }

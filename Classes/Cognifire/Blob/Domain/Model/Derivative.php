@@ -13,11 +13,12 @@ namespace Cognifire\Blob\Domain\Model;
  *                                                                        */
 
 
+use Cognifire\Blob\Package\GenericPackageManager;
+use Cognifire\Blob\Package\PackageManagerInterface;
 use TYPO3\Flow\Annotations as Flow;
 use TYPO3\Flow\Utility\Algorithms;
 use TYPO3\Flow\Utility\Files;
 use Cognifire\Blob\Exception;
-use Cognifire\Blob\Package\GenericPackageManagerInterface;
 
 /**
  * The basic Derivative. Most often, this is a package, however it can be a temporary folder as well.
@@ -29,9 +30,9 @@ class Derivative {
 
 	/**
 	 * @Flow\Inject
-	 * @var GenericPackageManagerInterface
+	 * @var GenericPackageManager
 	 */
-	protected $packageManager;
+	protected $genericPackageManager;
 
 	/**
 	 * The identifier for this derivative, typically a packageKey.
@@ -96,13 +97,16 @@ class Derivative {
 			$this->absolutePath = Files::concatenatePaths(array(FLOW_PATH_DATA, 'Blob', $this->derivativeKey));
 			Files::createDirectoryRecursively($this->absolutePath);
 		} else {
-			if(!$this->packageManager->isPackageKeyValid($this->derivativeKey)) {
-				throw new Exception('Package key' . $this->derivativeKey . 'is not valid. Only UpperCamelCase with alphanumeric characters in the format <VendorName>.<PackageKey>, please!', 1377641680);
+			/** @var $packageManager PackageManagerInterface */
+			$packageManager = $this->genericPackageManager;
+
+			if(!$packageManager->isPackageKeyValid($this->derivativeKey)) {
+				throw new Exception('Package key ' . $this->derivativeKey . ' is not valid. Only UpperCamelCase with alphanumeric characters in the format <VendorName>.<PackageKey>, please!', 1377641680);
 			}
-			if(!$this->packageManager->isPackageAvailable($this->derivativeKey)) {
-				$this->packageManager->createPackage($this->derivativeKey);
+			if(!$packageManager->isPackageAvailable($this->derivativeKey)) {
+				$packageManager->createPackage($this->derivativeKey);
 			}
-			$this->absolutePath = $this->packageManager->getPackagePath($this->derivativeKey);
+			$this->absolutePath = $packageManager->getPackagePath($this->derivativeKey);
 		}
 		if( $this->absolutePath === '' ) {
 			throw new Exception('Something died, because the absolutePath of the package looks like roadkill.', 1377643412);
