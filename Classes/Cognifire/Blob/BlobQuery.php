@@ -35,7 +35,8 @@ class BlobQuery {
 
 	protected $boilerplateKey;
 
-	protected $blobs = array();
+	protected $derivativeBlobs = array();
+	protected $boilerplateBlobs = array();
 
 	/**
 	 * The paths that will be provided to the FlowQuery object
@@ -53,8 +54,8 @@ class BlobQuery {
 
 	/**
 	 * @param mixed|string|Derivative $derivative  The identifier for this derivative
-	 * @param mixed|string|array      $paths          the FlowQuery object will only have blobs from these paths
-	 * @param string                  $type           the FlowQuery object will only have blobs of this type
+	 * @param mixed|string|array      $paths          the FlowQuery object will only have derivativeBlobs from these paths
+	 * @param string                  $type           the FlowQuery object will only have derivativeBlobs of this type
 	 * @throws Exception
 	 */
 	public function __construct($derivative = '', $paths = array(), $type = '') {
@@ -74,6 +75,10 @@ class BlobQuery {
 		}
 		$this->addPathsFilter($paths);
 		$this->addTypeFilter($type);
+	}
+
+	public function initializeObject() {
+		$this->scanForDerivativeBlobs();
 	}
 
 	/**
@@ -99,12 +104,41 @@ class BlobQuery {
 	}
 
 	/**
-	 * Creates a FlowQuery with the blobs
+	 * Creates a FlowQuery with the derivativeBlobs
 	 *
 	 * @return FlowQuery
 	 */
 	public function getFlowQuery() {
-		return new FlowQuery($this->blobs);
+		return new FlowQuery($this->derivativeBlobs);
+	}
+
+	/**
+	 * Takes the filters into account and initializes $this->derivativeBlobs with available files to be represented as derivativeBlobs.
+	 *
+	 * This does not break each file into child derivativeBlobs, and it does not take into account derivativeBlobs that might span multiple
+	 * files.
+	 */
+	protected function scanForDerivativeBlobs() {
+		$derivativePath = $this->derivative->getAbsolutePath();
+
+		// files and directories
+		$files = new \RecursiveIteratorIterator(
+			new \RecursiveDirectoryIterator(
+				$derivativePath,
+				\FilesystemIterator::UNIX_PATHS|\FilesystemIterator::SKIP_DOTS
+			)/*,
+			\RecursiveIteratorIterator::SELF_FIRST //returns directories as well.
+			*/
+			/*
+			 * \RecursiveIteratorIterator::LEAVES_ONLY
+			 * (on by default) only returns files which is acceptable because we expect packages to be
+			 * stored in git which ignores empty folders anyway.
+			 */
+		);
+
+		foreach ($files as $filename => $file) {
+			$this->derivativeBlobs[] = $filename;
+		}
 	}
 
 	/**
@@ -117,7 +151,7 @@ class BlobQuery {
 			"boilerplateKey" => $this->boilerplateKey,
 			"derivative" => '' . $this->derivative, //Get the string representation.
 			"derivativePath" => $this->derivative->getAbsolutePath(),
-			"blobs" => $this->blobs,
+			"derivativeBlobs" => $this->derivativeBlobs,
 			"pathFilter" => $this->pathFilter,
 			"typeFilter" => $this->typeFilter
 		);
