@@ -24,16 +24,18 @@ class Files extends \TYPO3\Flow\Utility\Files {
 	 * Returns all filenames from the specified directory. Filters hidden files and
 	 * directories.
 	 *
-	 * @param string  $path           Path to the directory which shall be read
-	 * @param string  $suffix         If specified, only filenames with this extension are returned (eg. ".php" or "foo.bar")
-	 * @param boolean $returnRealPath If turned on, all paths are resolved by calling realpath()
-	 * @param boolean $returnDotFiles If turned on, also files beginning with a dot will be returned
-	 * @param boolean $followSymLinks If turned off, does not follow symlinks
-	 * @param callable $userFilter
+	 * @param string   $path           Path to the directory which shall be read
+	 * @param string   $suffix         If specified, only filenames with this extension are returned (eg. ".php" or "foo.bar")
+	 * @param boolean  $returnRealPath If turned on, all paths are resolved by calling realpath()
+	 * @param boolean  $returnDotFiles If turned on, also files beginning with a dot will be returned
+	 * @param boolean  $followSymLinks If turned off, does not follow symlinks
+	 * @param callable $userFilter     A callable function that takes one parameter the FileInfo object of a file to test.
+	 * @ (removed) param array    $filenames      Internally used for the recursion - don't specify!
 	 * @throws Exception
 	 * @return array Filenames including full path
 	 * @api
 	 */
+	//This version uses SplRecursiveCallableFilterIterator
 	static public function readDirectoryRecursively($path, $suffix = NULL, $returnRealPath = FALSE, $returnDotFiles = FALSE, $followSymLinks = TRUE, /*callable*/ $userFilter = NULL) {
 		if (!is_dir($path)) {
 			throw new Exception('"' . $path . '" is no directory.', 1207253462);
@@ -41,71 +43,78 @@ class Files extends \TYPO3\Flow\Utility\Files {
 
 		$suffixLength = strlen($suffix);
 
-		if(is_callable($userFilter)) {
-			$filter = $userFilter/* use ($returnDotFiles, $suffix, $suffixLength)*/; //the use doesn't work here.
-		} else {
-			/**
-			 * Anonymous function to filter the DirectoryIterator's results
-			 *
-			 * @param $fileInfo \SplFileInfo Current file's FileInfo
-			 * @param $pathname string       Current file's path
-			 * @param $iterator RecursiveCallbackFilterIterator
-			 * @return boolean true if the current element is acceptable, otherwise false.
-			 */
-			$filter = function ($fileInfo, $pathname, $iterator) use ($returnDotFiles, $suffix, $suffixLength) {
-				$filename = $fileInfo->getFilename();
-				if ($returnDotFiles === FALSE && $filename[0] === '.') {
+		$userFilterIsCallable = is_callable($userFilter);
+		/**
+		 * Anonymous function to filter the DirectoryIterator's results
+		 *
+		 * @param $fileInfo \SplFileInfo Current file's FileInfo
+		 * @param $pathname string       Current file's path
+		 * @param $iterator RecursiveCallbackFilterIterator
+		 * @return boolean true if the current element is acceptable, otherwise false.
+		 */
+		$filter = function ($fileInfo, $pathname, $iterator) use ($returnDotFiles, $suffix, $suffixLength, $userFilter, $userFilterIsCallable) {
+			$filename = $fileInfo->getFilename();
+			if ($returnDotFiles === FALSE && $filename[0] === '.') {
+				return FALSE;
+			}
+			if (($fileInfo->isFile() && ($suffix === NULL || substr($filename, -$suffixLength) === $suffix)) || $iterator->hasChildren()) {
+				if($userFilterIsCallable && !$userFilter($fileInfo)) {
 					return FALSE;
 				}
-				if (($fileInfo->isFile() && ($suffix === NULL || substr($filename, -$suffixLength) === $suffix)) || $iterator->hasChildren()) {
-					return TRUE;
-				}
-				return FALSE;
-			};
+				return TRUE;
+			}
+			return FALSE;
+		};
+
+		$directoryIterator = new \RecursiveDirectoryIterator(
+			$path,
+			//defaults: \FilesystemIterator::KEY_AS_PATHNAME|\FilesystemIterator::CURRENT_AS_FILEINFO
+			$followSymLinks
+				? \FilesystemIterator::UNIX_PATHS|\FilesystemIterator::SKIP_DOTS|\FilesystemIterator::FOLLOW_SYMLINKS
+				: \FilesystemIterator::UNIX_PATHS|\FilesystemIterator::SKIP_DOTS
+		);
+		if(version_compare(PHP_VERSION, '5.4.0', '>=')) {
+			$filteredDirectory = new \RecursiveCallbackFilterIterator($directoryIterator,$filter);
+		} else {
+			//We don't require PHP 5.4 yet so we provide this class.
+			$filteredDirectory = new RecursiveCallbackFilterIterator($directoryIterator, $filter);
 		}
 
-		$directoryIterator = new \RecursiveIteratorIterator(
-			//We don't require PHP 5.4 yet so we provide this class.
-			//new \RecursiveCallbackFilterIterator(
-			new RecursiveCallbackFilterIterator(
-				new \RecursiveDirectoryIterator(
-					$path,
-					//defaults: \FilesystemIterator::KEY_AS_PATHNAME|\FilesystemIterator::CURRENT_AS_FILEINFO
-					$followSymLinks
-						? \FilesystemIterator::UNIX_PATHS|\FilesystemIterator::SKIP_DOTS|\FilesystemIterator::FOLLOW_SYMLINKS
-						: \FilesystemIterator::UNIX_PATHS|\FilesystemIterator::SKIP_DOTS
-				), $filter
-			)
-		);
-
 		$filenames = array();
-		foreach ($directoryIterator as $pathname => $fileInfo) {
+		foreach (new \RecursiveIteratorIterator($filteredDirectory) as $pathname => $fileInfo) {
 			$filenames[] = self::getUnixStylePath(($returnRealPath === TRUE ? realpath($pathname) : $pathname));
 		}
 		return $filenames;
 	}
-	// This version just switches to using FilesystemIterator instead of DirectoryIterator. It does not add the userFilter.
-	/*static public function readDirectoryRecursively($path, $suffix = NULL, $returnRealPath = FALSE, $returnDotFiles = FALSE, &$filenames = array()) {
-		if (!is_dir($path)) {
-			throw new Exception('"' . $path . '" is no directory.', 1207253462);
-		}
-
-		//by default FilesystemIterator has KEY_AS_PATHNAME|CURRENT_AS_FILEINFO|SKIP_DOTS
-		$directoryIterator = new \FilesystemIterator($path,\FilesystemIterator::FOLLOW_SYMLINKS);
-		$suffixLength = strlen($suffix);
-
-		foreach ($directoryIterator as $pathname => $fileInfo) {
-			$filename = $fileInfo->getFilename();
-			if ($returnDotFiles === FALSE && $filename[0] === '.') {
-				continue;
-			}
-			if ($fileInfo->isFile() && ($suffix === NULL || substr($filename, -$suffixLength) === $suffix)) {
-				$filenames[] = self::getUnixStylePath(($returnRealPath === TRUE ? realpath($pathname) : $pathname));
-			}
-			if ($fileInfo->isDir()) {
-				self::readDirectoryRecursively($pathname, $suffix, $returnRealPath, $returnDotFiles, $filenames);
-			}
-		}
-		return $filenames;
-	}*/
+	// This version just switches to using FilesystemIterator instead of DirectoryIterator.
+//	static public function readDirectoryRecursively($path, $suffix = NULL, $returnRealPath = FALSE, $returnDotFiles = FALSE, $followSymLinks = TRUE, /*callable*/ $userFilter = NULL, &$filenames = array()) {
+//		if (!is_dir($path)) {
+//			throw new Exception('"' . $path . '" is no directory.', 1207253462);
+//		}
+//
+//		//by default FilesystemIterator has KEY_AS_PATHNAME|CURRENT_AS_FILEINFO|SKIP_DOTS
+//		$directoryIterator = new \FilesystemIterator($path,$followSymLinks?\FilesystemIterator::FOLLOW_SYMLINKS:NULL);
+//		$suffixLength = strlen($suffix);
+//		$userFilterIsCallable = is_callable($userFilter);
+//
+//		foreach ($directoryIterator as $pathname => $fileInfo) {
+//			/** @var $fileInfo \SplFileInfo */
+//			$filename = $fileInfo->getFilename();
+//			if ($returnDotFiles === FALSE && $filename[0] === '.') {
+//				continue;
+//			}
+//			if ($fileInfo->isFile() && ($suffix === NULL || substr($filename, -$suffixLength) === $suffix)) {
+//				//Which way is more performant? Calculating the pathname and filename in the userFilter or passing it in?
+//				//if($userFilterIsCallable && !$userFilter($fileInfo, $pathname, $filename, $returnDotFiles, $suffix)) {
+//				if($userFilterIsCallable && !$userFilter($fileInfo)) {
+//					continue;
+//				}
+//				$filenames[] = self::getUnixStylePath(($returnRealPath === TRUE ? realpath($pathname) : $pathname));
+//			}
+//			if ($fileInfo->isDir()) {
+//				self::readDirectoryRecursively($pathname, $suffix, $returnRealPath, $returnDotFiles, $followSymLinks, $userFilter, $filenames);
+//			}
+//		}
+//		return $filenames;
+//	}
 }

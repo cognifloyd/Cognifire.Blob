@@ -128,17 +128,15 @@ class BlobQuery {
 		/**
 		 *
 		 * @param $fileInfo \SplFileInfo
-		 * @param $pathname string
-		 * @param $iterator RecursiveCallbackFilterIterator
 		 * @return boolean true if the current element is acceptable, otherwise false.
 		 */
-		$filter = function($fileInfo, $pathname, $iterator) use ($derivativePath, $derivativePathLength, $suffix, $suffixLength) {
+		$filter = function($fileInfo) use ($derivativePath, $derivativePathLength, $suffix, $suffixLength) {
 			$filename = $fileInfo->getFilename();
 			//Hidden files can be included explicitly, but we filter any other hidden files here.
 			if ($filename[0] === '.') {
 				return FALSE;
 			}
-			if (($fileInfo->isFile() && ($suffix === NULL || substr($filename, -$suffixLength) === $suffix)) || $iterator->hasChildren()) {
+			if (($fileInfo->isFile() && ($suffix === NULL || substr($filename, -$suffixLength) === $suffix)) || $fileInfo->isDir()) {
 				return TRUE;
 			}
 			return FALSE;
