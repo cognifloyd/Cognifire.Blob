@@ -39,31 +39,30 @@ class Files extends \TYPO3\Flow\Utility\Files {
 			throw new Exception('"' . $path . '" is no directory.', 1207253462);
 		}
 
-		$userFilterIsCallable = is_callable($userFilter);
 		$suffixLength = strlen($suffix);
 
-		/**
-		 * Anonymous function to filter the DirectoryIterator's results
-		 *
-		 * @param $fileInfo \SplFileInfo
-		 * @param $pathname string
-		 * @param $iterator RecursiveCallbackFilterIterator
-		 * @return boolean true if the current element is acceptable, otherwise false.
-		 */
-		$filter = function ($fileInfo, $pathname, $iterator) use ($suffix, $suffixLength, $returnDotFiles, $userFilter, $userFilterIsCallable) {
-
-			$filename = $fileInfo->getFilename();
-			if ($returnDotFiles === FALSE && $filename[0] === '.') {
-				return FALSE;
-			}
-			if (($userFilterIsCallable && $userFilter($fileInfo, $pathname, $iterator, $filename)) || TRUE ) {
-				if (($fileInfo->isFile() && ($suffix === NULL || substr($filename, -$suffixLength) === $suffix))
-					|| $iterator->hasChildren()) {
+		if(is_callable($userFilter)) {
+			$filter = $userFilter/* use ($returnDotFiles, $suffix, $suffixLength)*/; //the use doesn't work here.
+		} else {
+			/**
+			 * Anonymous function to filter the DirectoryIterator's results
+			 *
+			 * @param $fileInfo \SplFileInfo Current file's FileInfo
+			 * @param $pathname string       Current file's path
+			 * @param $iterator RecursiveCallbackFilterIterator
+			 * @return boolean true if the current element is acceptable, otherwise false.
+			 */
+			$filter = function ($fileInfo, $pathname, $iterator) use ($returnDotFiles, $suffix, $suffixLength) {
+				$filename = $fileInfo->getFilename();
+				if ($returnDotFiles === FALSE && $filename[0] === '.') {
+					return FALSE;
+				}
+				if (($fileInfo->isFile() && ($suffix === NULL || substr($filename, -$suffixLength) === $suffix)) || $iterator->hasChildren()) {
 					return TRUE;
 				}
-			}
-			return FALSE;
-		};
+				return FALSE;
+			};
+		}
 
 		$directoryIterator = new \RecursiveIteratorIterator(
 			//We don't require PHP 5.4 yet so we provide this class.

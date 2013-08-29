@@ -122,26 +122,31 @@ class BlobQuery {
 	protected function scanForDerivativeBlobs() {
 		$derivativePath = $this->derivative->getAbsolutePath();
 		$derivativePathLength = strlen($derivativePath);
+		$suffix = NULL;
+		$suffixLength = strlen($suffix);
 
 		/**
 		 *
 		 * @param $fileInfo \SplFileInfo
 		 * @param $pathname string
 		 * @param $iterator RecursiveCallbackFilterIterator
-		 * @param $filename string
 		 * @return boolean true if the current element is acceptable, otherwise false.
 		 */
-		$filter = function($fileInfo, $pathname, $iterator, $filename) use ($derivativePath, $derivativePathLength) {
+		$filter = function($fileInfo, $pathname, $iterator) use ($derivativePath, $derivativePathLength, $suffix, $suffixLength) {
+			$filename = $fileInfo->getFilename();
 			//Hidden files can be included explicitly, but we filter any other hidden files here.
 			if ($filename[0] === '.') {
 				return FALSE;
 			}
-			return TRUE;
+			if (($fileInfo->isFile() && ($suffix === NULL || substr($filename, -$suffixLength) === $suffix)) || $iterator->hasChildren()) {
+				return TRUE;
+			}
+			return FALSE;
 		};
 
 		$files = Files::readDirectoryRecursively(
 			$derivativePath,
-			NULL, //suffix
+			NULL, //I'll handle suffix
 			TRUE, //return hidden files (beginning with dot)
 			FALSE, //don't return real path (dest of symlinks)
 			FALSE, //follow symlinks is disabled so that no one can link to / or something.
