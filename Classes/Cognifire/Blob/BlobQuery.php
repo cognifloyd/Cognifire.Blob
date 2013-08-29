@@ -14,9 +14,10 @@ namespace Cognifire\Blob;
 
 
 use Cognifire\Blob\Domain\Model\Derivative;
+use Cognifire\Blob\Utility\Files;//use TYPO3\Flow\Utility\Files;
+use Cognifire\Blob\Utility\RecursiveCallbackFilterIterator;
 use TYPO3\Eel\FlowQuery\FlowQuery;
 use TYPO3\Flow\Annotations as Flow;
-use TYPO3\Flow\Utility\Files;
 
 /**
  * BlobQuery is a FlowQuery factory. The returned FlowQuery instance will contain all of the Blobs
@@ -43,7 +44,7 @@ class BlobQuery {
 	 *
 	 * @var array
 	 */
-	protected $pathFilter = array();
+	protected $pathFilters = array();
 
 	/**
 	 * The file or mime types that will be provided to the FlowQuery object
@@ -100,7 +101,7 @@ class BlobQuery {
 		foreach ($paths as $path) {
 			$pathFilter[] = Files::getUnixStylePath($path);
 		}
-		$this->pathFilter = array_merge($this->pathFilter, $pathFilter);
+		$this->pathFilters = array_merge($this->pathFilters, $pathFilter);
 	}
 
 	/**
@@ -120,25 +121,56 @@ class BlobQuery {
 	 */
 	protected function scanForDerivativeBlobs() {
 		$derivativePath = $this->derivative->getAbsolutePath();
+		$derivativePathLength = strlen($derivativePath);
 
-		// files and directories
-		$files = new \RecursiveIteratorIterator(
-			new \RecursiveDirectoryIterator(
-				$derivativePath,
-				\FilesystemIterator::UNIX_PATHS|\FilesystemIterator::SKIP_DOTS
-			)/*,
-			\RecursiveIteratorIterator::SELF_FIRST //returns directories as well.
-			*/
-			/*
-			 * \RecursiveIteratorIterator::LEAVES_ONLY
-			 * (on by default) only returns files which is acceptable because we expect packages to be
-			 * stored in git which ignores empty folders anyway.
-			 */
-		);
+		/**
+		 *
+		 * @param $fileInfo \SplFileInfo
+		 * @param $pathname string
+		 * @param $iterator RecursiveCallbackFilterIterator
+		 * @param $filename string
+		 * @return boolean true if the current element is acceptable, otherwise false.
+		 */
+		$filter = function($fileInfo, $pathname, $iterator, $filename) use ($derivativePath, $derivativePathLength) {
+			//Hidden files can be included explicitly, but we filter any other hidden files here.
+			if ($filename[0] === '.') {
+				return FALSE;
+			}
+			return TRUE;
+		};
 
-		foreach ($files as $filename => $file) {
-			$this->derivativeBlobs[] = $filename;
+		$files = Files::readDirectoryRecursively(
+			$derivativePath,
+			NULL, //suffix
+			TRUE, //return hidden files (beginning with dot)
+			FALSE, //don't return real path (dest of symlinks)
+			FALSE, //follow symlinks is disabled so that no one can link to / or something.
+			$filter
+		); //returns an single dimensional array of all filenames w/ absolute paths.
+		$this->derivativeBlobs = $files;
+
+		/*foreach ($files as $pathAndFileName => $file) {
+			$relativePath = substr($pathAndFileName, $derivativePathLength);
+			if($this->pathMatchesFilters($relativePath)) {
+				$this->derivativeBlobs[$relativePath] = $pathAndFileName;
+			}
+		}*/
+	}
+
+	/**
+	 *
+	 * @param $relativePath string Path relative to $this->derivativePath
+	 * @return boolean
+	 */
+	protected function pathMatchesFilters($relativePath) {
+		$derivativePath = $this->derivative->getAbsolutePath();
+
+		/*foreach ($this->pathFilters as $pathFilter) {
+			//compare each pathGlob with the relativePath. return FALSE on first not matching result.
 		}
+		//check the file at relative path against $this->filterType and return FALSE if it doesn't match.
+		*/
+		return TRUE;
 	}
 
 	/**
@@ -152,7 +184,7 @@ class BlobQuery {
 			"derivative" => '' . $this->derivative, //Get the string representation.
 			"derivativePath" => $this->derivative->getAbsolutePath(),
 			"derivativeBlobs" => $this->derivativeBlobs,
-			"pathFilter" => $this->pathFilter,
+			"pathFilters" => $this->pathFilters,
 			"typeFilter" => $this->typeFilter
 		);
 	}
