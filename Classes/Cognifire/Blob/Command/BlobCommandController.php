@@ -11,6 +11,7 @@ use Cognifire\Blob\Domain\Model\Derivative;
 use TYPO3\Flow\Annotations as Flow;
 use TYPO3\Flow\Cli\CommandController;
 use TYPO3\Flow\Utility\Files;
+use TYPO3\Flow\Utility\MediaTypes;
 
 /**
  * @Flow\Scope("singleton")
@@ -59,7 +60,10 @@ class BlobCommandController extends CommandController {
 	}
 
 	public function newBlobQueryCommand() {
-		$d = new BlobQuery('Cognifire.Blob','Configuration/','text/plain');
+		$d = new BlobQuery('Cognifire.Blob', 'text/html');
+		$this->outputLine(print_r($d->introspect(), TRUE));
+
+		$d = new BlobQuery('Cognifire.Blob', 'application/x-php');
 		$this->outputLine(print_r($d->introspect(), TRUE));
 	}
 }

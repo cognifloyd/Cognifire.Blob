@@ -15,13 +15,14 @@ namespace Cognifire\Blob;
 
 use Cognifire\Blob\Domain\Model\Derivative;
 use Cognifire\Blob\Utility\Files;//use TYPO3\Flow\Utility\Files;
+use Cognifire\Blob\Utility\MediaTypes;//use TYPO3\Flow\Utility\MediaTypes;
 use Cognifire\Blob\Utility\RecursiveCallbackFilterIterator;
 use TYPO3\Eel\FlowQuery\FlowQuery;
 use TYPO3\Flow\Annotations as Flow;
 
 /**
  * BlobQuery is a FlowQuery factory. The returned FlowQuery instance will contain all of the Blobs
- * from the given package that match the glob or type filters.
+ * from the given package that match the glob or mediaType filters.
  *
  * Each BlobQuery instance can only work with blobs from a single package at a time.
  */
@@ -40,26 +41,43 @@ class BlobQuery {
 	protected $boilerplateBlobs = array();
 
 	/**
-	 * The paths that will be provided to the FlowQuery object
+	 * File that match this Media/Mime Type will be provided to the FlowQuery object
+	 * This only supports one mediaType for now, but could be turned into an array to deal with more.
+	 *
+	 * @var string
+	 */
+	protected $mediaTypeFilter = '';
+
+	/**
+	 * File that match any of these filename filters will be provided to the FlowQuery object
+	 *
+	 * @var array
+	 */
+	protected $filenameFilters = array();
+
+	/**
+	 * File that match any of these path filters will be provided to the FlowQuery object
+	 * These paths are relative to the derivative path root.
+	 * Note that symlinks and dot files are ignored (.. and . references are not allowed).
 	 *
 	 * @var array
 	 */
 	protected $pathFilters = array();
 
 	/**
-	 * The file or mime types that will be provided to the FlowQuery object
+	 * my awesome debugging variable
 	 *
 	 * @var array
 	 */
-	protected $typeFilter = array();
+	protected $lovebug = array();
 
 	/**
 	 * @param mixed|string|Derivative $derivative  The identifier for this derivative
-	 * @param mixed|string|array      $paths          the FlowQuery object will only have derivativeBlobs from these paths
-	 * @param string                  $type           the FlowQuery object will only have derivativeBlobs of this type
+	 * @param string                  $mediaType   the FlowQuery object will only have derivativeBlobs of this mediaType
+	 * @param mixed|string|array      $paths       the FlowQuery object will only have derivativeBlobs from these paths
 	 * @throws Exception
 	 */
-	public function __construct($derivative = '', $paths = array(), $type = '') {
+	public function __construct($derivative = '', $mediaType = '', $paths = array()) {
 		if(is_string($derivative)) {
 			$this->derivative = new Derivative($derivative);
 		} elseif(is_object($derivative) && ('Derivative' === get_class($derivative)) ) {
@@ -74,21 +92,12 @@ class BlobQuery {
 		if(is_string($paths)) {
 			$paths = array($paths);
 		}
+		$this->mediaTypeFilter = $mediaType;
 		$this->addPathsFilter($paths);
-		$this->addTypeFilter($type);
 	}
 
 	public function initializeObject() {
-		$this->scanForDerivativeBlobs();
-	}
-
-	/**
-	 * Adds the given file or media type to the list of filtered types
-	 *
-	 * @param $typeFilter string
-	 */
-	protected function addTypeFilter($typeFilter) {
-		$this->typeFilter = array_merge($this->typeFilter, array($typeFilter));
+		$this->scanForMatchingDerivativeBlobs();
 	}
 
 	/**
@@ -119,33 +128,85 @@ class BlobQuery {
 	 * This does not break each file into child derivativeBlobs, and it does not take into account derivativeBlobs that might span multiple
 	 * files.
 	 */
-	protected function scanForDerivativeBlobs() {
+	protected function scanForMatchingDerivativeBlobs() {
 		$derivativePath = $this->derivative->getAbsolutePath();
 		$derivativePathLength = strlen($derivativePath);
-		$suffix = NULL;
-		$suffixLength = strlen($suffix);
+
+		$suffixes = MediaTypes::getFilenameExtensionsFromMediaType($this->mediaTypeFilter);
+		$suffixLength = array();
+		if(!$suffixes) {
+			$includeMediaType = TRUE;//skips processing based on mediaType.
+		} else {
+			$includeMediaType = FALSE;
+			foreach ($suffixes as $suffix) {
+				$suffixLength[] = strlen($suffix);
+			}
+		}
+
+		$includeThisHiddenFile = FALSE;
+		$includeFilename       = TRUE;
+		$excludeFilename       = FALSE;
+		$includePath           = TRUE;
+		$excludePath           = FALSE;
 
 		/**
+		 * If no filters are provided, everything gets included. If *any* filters are
+		 * provided, then nothing is included except for files that match at least one
+		 * of each type of filter (one mediaType filter, one filename filter, and one
+		 * path filter).
+		 *
+		 * If a directory is excluded, nothing in it can be explicitly included,
+		 * because when we return FALSE, we won't descend into that directory.
+		 * In effect, that means that an exclusion is stronger than an inclusion.
 		 *
 		 * @param $fileInfo \SplFileInfo
 		 * @return boolean true if the current element is acceptable, otherwise false.
 		 */
-		$filter = function($fileInfo) use ($derivativePath, $derivativePathLength, $suffix, $suffixLength) {
+		$filter = function($fileInfo) use ( $derivativePath, $derivativePathLength,
+											$suffixes, $suffixLength,
+											$includeMediaType, $includeThisHiddenFile,
+											$includeFilename, $excludeFilename,
+											$includePath, $excludePath ) {
 			$filename = $fileInfo->getFilename();
-			//Hidden files can be included explicitly, but we filter any other hidden files here.
-			if ($filename[0] === '.') {
-				return FALSE;
-			}
-			if (($fileInfo->isFile() && ($suffix === NULL || substr($filename, -$suffixLength) === $suffix)) || $fileInfo->isDir()) {
-				return TRUE;
+			$path = $fileInfo->getPathname();
+			$isDir = $fileInfo->isDir();
+
+
+			//TODO[cognifloyd] Once we require PHP 5.4 (which provides $this in anonymous functions), I would like to break each section into a separate method.
+			/* MediaType filtering */
+				if ($isDir && $includeMediaType === FALSE) {
+					//MediaType processing doesn't apply to directories
+					$includeMediaType = TRUE;
+				}
+
+				//an alternate algorithm would compare the mediatype instead of the suffix.
+				//$mediaType = MediaTypes::getMediaTypeFromFilename($filename);
+				while ($includeMediaType === FALSE && list($i, $suffix) = each($suffixes)) {
+					if (substr($filename, -$suffixLength[$i]) === $suffix) {
+						$includeMediaType = TRUE;
+					}
+				}
+
+			/* filename filtering */
+
+
+			/* path filtering */
+
+
+			if (   $includeMediaType                      //MediaType
+				&& $includeFilename  && !$excludeFilename //FileName
+				&& $includePath      && !$excludePath     //Path
+				//Hidden files can be included explicitly, but we filter any other hidden files here:
+				&& ($includeThisHiddenFile || $filename[0] !== '.') ) {
+					return TRUE;
 			}
 			return FALSE;
 		};
 
 		$files = Files::readDirectoryRecursively(
 			$derivativePath,
-			NULL, //I'll handle suffix
-			TRUE, //return hidden files (beginning with dot)
+			NULL, //only supports a single suffix, but I want to check for more than one.
+			TRUE, //return hidden files (beginning with dot) So that we can include some of them if desired.
 			FALSE, //don't return real path (dest of symlinks)
 			FALSE, //follow symlinks is disabled so that no one can link to / or something.
 			$filter
@@ -183,12 +244,13 @@ class BlobQuery {
 	 */
 	public function introspect() {
 		return array(
-			"boilerplateKey" => $this->boilerplateKey,
 			"derivative" => '' . $this->derivative, //Get the string representation.
 			"derivativePath" => $this->derivative->getAbsolutePath(),
+			"mediaType" => $this->mediaTypeFilter,
 			"derivativeBlobs" => $this->derivativeBlobs,
 			"pathFilters" => $this->pathFilters,
-			"typeFilter" => $this->typeFilter
+			"boilerplateKey" => $this->boilerplateKey,
+			"lovebug" => $this->lovebug
 		);
 	}
 }
