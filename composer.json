@@ -1,12 +1,14 @@
 {
-	"name":"cognifire\/blob",
-	"type":"typo3-flow-package",
-	"description":null,
-	"require":{
-		"typo3\/flow":"*"
+	"name": "cognifire/blob",
+	"type": "typo3-flow-package",
+	"description": "The Builder Foundation",
+	"require": {
+		"typo3/flow": "*",
+
+		"symfony/finder": "2.3.*"
 	},
-	"autoload":{
-		"psr-0":{
-			"Cognifire\\Blob":"Classes"}
+	"autoload": {
+		"psr-0": {
+			"Cognifire\\Blob": "Classes"}
 	}
 }
