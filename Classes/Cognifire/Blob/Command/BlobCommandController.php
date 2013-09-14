@@ -60,11 +60,28 @@ class BlobCommandController extends CommandController {
 	}
 
 	public function newBlobQueryCommand() {
-		$d = new BlobQuery('Cognifire.Blob', 'text/html');
+		$d = new BlobQuery('Cognifire.Blob');
+		$d->exclude('Classes')
+		->exclude('/.*L.*/')
+		;
+		$this->outputLine(print_r($d->introspect(), TRUE));
+
+		$d = new BlobQuery('Cognifire.Blob');
+		$d->ofMediaType('text/html')
+		;
 		$this->outputLine(print_r($d->introspect(), TRUE));
 
 		$d = new BlobQuery('Cognifire.Blob', 'application/x-php');
+		$d->in('Classes/Cognifire/Blob')
+		->exclude('Package')
+		->with('composer.json')
+		;
 		$this->outputLine(print_r($d->introspect(), TRUE));
+
+		$d = new BlobQuery('Cognifire.Blob', 'application/x-php');
+		$d->with('composer.json');
+		$this->outputLine(print_r($d->introspect(), TRUE));
+
 	}
 }
 
