@@ -12,10 +12,10 @@ namespace Cognifire\Blob;
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
+use Cognifire\Blob\Domain\Model\Boilerplate;
 use Cognifire\Blob\Domain\Model\Derivative;
 use Cognifire\Blob\Utility\Files; //use TYPO3\Flow\Utility\Files;
 use Cognifire\Blob\Utility\MediaTypes; //use TYPO3\Flow\Utility\MediaTypes;
-use Cognifire\Blob\Utility\RecursiveCallbackFilterIterator;
 use Cognifire\BuilderFoundation\Exception;
 use Symfony\Component\Finder\Finder;
 use TYPO3\Eel\FlowQuery\FlowQuery;
@@ -32,18 +32,19 @@ use TYPO3\Flow\Annotations as Flow;
 class BlobQuery {
 
 	/**
-	 * The derivative that this BlobQuery works with
+	 * The derivative that this BlobQuery works on
 	 *
 	 * @var Derivative
 	 */
 	protected $derivative;
 
 	/**
-	 * The key of the boilerplate
+	 * The boilerplate that this BlobQuery is currently using
+	 * change using from()
 	 *
 	 * @var  string
 	 */
-	protected $boilerplateKey;
+	protected $boilerplate;
 
 	/**
 	 * File that match this Media/Mime Type will be provided to the FlowQuery object
@@ -80,11 +81,10 @@ class BlobQuery {
 
 	/**
 	 * @param mixed|string|Derivative $derivative  The identifier for this derivative
-	 * @//param string                  $mediaType   the FlowQuery object will only have derivativeBlobs of this mediaType
-	 * @//param mixed|string|array      $paths       the FlowQuery object will only have derivativeBlobs from these paths
+	 * @param mixed|string|Boilerplate $boilerplate  The identifier for the derivative (use from() to change)
 	 * @throws Exception
 	 */
-	public function __construct($derivative = '') {
+	public function __construct($derivative, $boilerplate = '') {
 		if (is_string($derivative)) {
 			$this->derivative = new Derivative($derivative);
 		} elseif (is_object($derivative) && ('Derivative' === get_class($derivative))) {
@@ -95,6 +95,9 @@ class BlobQuery {
 				$type .= ' of class ' . get_class($derivative);
 			}
 			throw new Exception('BlobQuery requires a string or a Derivative, but ' . $type . ' was received.', 1375743984);
+		}
+		if($boilerplate !== '') {
+			$this->from($boilerplate);
 		}
 	}
 
@@ -165,6 +168,36 @@ class BlobQuery {
 	}
 
 	/**
+	 *
+	 * @param mixed|string|Boilerplate $boilerplate  The identifier for the derivative (use from() to change)
+	 * @throws Exception
+	 * @return $this
+	 */
+	public function from($boilerplate) {
+		if (is_string($boilerplate)) {
+			$this->boilerplate = new Boilerplate($boilerplate);
+		} elseif (is_object($boilerplate) && ('Boilerplate' === get_class($boilerplate))) {
+			$this->boilerplate = $boilerplate;
+		} else {
+			$type = gettype($boilerplate);
+			if ('object' === $type) {
+				$type .= ' of class ' . get_class($boilerplate);
+			}
+			throw new Exception('BlobQuery requires a string packageKey or a Boilerplate object to identify the boilerplate package, but ' . $type . ' was received.', 1375743984);
+		}
+		return $this;
+	}
+
+	public function integrate($preset) {
+		return $this;
+	}
+
+	public function integrateFiles($files) {
+
+		return $this;
+	}
+
+	/**
 	 * This should return some metadata about what packages, files, etc that have been selected in this BlobQuery.
 	 *
 	 * @return array
@@ -184,7 +217,7 @@ class BlobQuery {
 			"foundFiles" => $foundFiles,
 			//"paths"           => $this->paths,
 			//"notPaths"        => $this->notPaths,
-			"boilerplateKey"  => $this->boilerplateKey
+			"boilerplate"  => $this->boilerplate
 		);
 	}
 
