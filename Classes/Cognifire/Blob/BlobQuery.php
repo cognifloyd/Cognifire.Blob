@@ -18,7 +18,6 @@ use Cognifire\Blob\Utility\MediaTypes; //use TYPO3\Flow\Utility\MediaTypes;
 use Cognifire\Blob\Utility\RecursiveCallbackFilterIterator;
 use Cognifire\BuilderFoundation\Exception;
 use Symfony\Component\Finder\Finder;
-use Symfony\Component\Finder\Glob;
 use TYPO3\Eel\FlowQuery\FlowQuery;
 use TYPO3\Flow\Annotations as Flow;
 
@@ -40,23 +39,11 @@ class BlobQuery {
 	protected $derivative;
 
 	/**
-	 * Finder searches for and keeps track of which files are selected.
-	 * This is the heart of BlobQuery.
-	 *
-	 * @var  Finder
-	 */
-	protected $finder;
-
-	/**
 	 * The key of the boilerplate
 	 *
 	 * @var  string
 	 */
 	protected $boilerplateKey;
-
-	protected $derivativeBlobs = array();
-
-	protected $boilerplateBlobs = array();
 
 	/**
 	 * File that match this Media/Mime Type will be provided to the FlowQuery object
@@ -64,7 +51,7 @@ class BlobQuery {
 	 *
 	 * @var string
 	 */
-	protected $mediaTypeFilter = '';
+	protected $mediaType = '';
 
 	/**
 	 * Files that are in any of these paths or path globs will be provided to the FlowQuery object
@@ -111,37 +98,11 @@ class BlobQuery {
 		}
 	}
 
-	public function initializeObject() {
-		$this->setupFinder();
-		//don't scan till needed
-		//$this->scanForMatchingDerivativeBlobs();
-	}
-
-	protected function setupFinder() {
-		$this->finder = new Finder();
-		$this->finder
-			->files()
-		->ignoreUnreadableDirs()
-		->useBestAdapter()//php adapter does not support glob on path() or notPath()
-
-			/* VCS files/folders are ignored by default, but could be disabled if needed */
-			//->ignoreVCS(FALSE)
-
-			/* Hidden Files are ignored by default, but we might want to include .htaccess or something.
-			   We could just not ignore the hidden files here, or make people be very explicit about adding
-			   a particular hidden file or folder: inHiddenDirectory() addHiddenFile() addHiddenFiles() */
-			//->ignoreDotFiles(FALSE)
-
-			/* Symlinks are disabled by default as a security precaution.
-			   However, if someone really needs symlinks, we'd need to make this configurable here.
-			   If we do enable symlinks, then we'll still have to make sure that the destination
-			   is "allowed" somehow. For example, a link to root '/' would be abusive.  */
-			//->followLinks()
-
-			/* Someone could pass in a Finder or a Directory Iterator with a set of files */
-			//->append($someIterator)
-		;
-	}
+//	public function initializeObject() {
+//		$this->setupFinder();
+//		//don't scan till needed
+//		$this->newFinder();
+//	}
 
 	/**
 	 * Retrieve only the files of this media type.
@@ -149,14 +110,10 @@ class BlobQuery {
 	 *
 	 * @param string $mediaType
 	 * @return BlobQuery The current BlobQuery instance
+	 * @api
 	 */
 	public function ofMediaType($mediaType) {
-		$this->mediaTypeFilter = $mediaType;
-		$suffixes = MediaTypes::getFilenameExtensionsFromMediaType($mediaType);
-		foreach ($suffixes as $suffix) {
-			$this->finder->name('*.' . $suffix); //Each call of name is like an "OR"
-		}
-
+		$this->mediaType = $mediaType;
 		return $this;
 	}
 
@@ -167,6 +124,7 @@ class BlobQuery {
 	 *
 	 * @param string|array $dirs A directory path or an array of directories
 	 * @return BlobQuery The current BlobQuery instance
+	 * @api
 	 */
 	public function in($dirs) {
 		$this->paths = array_merge($this->paths, (array) $dirs);
@@ -181,6 +139,7 @@ class BlobQuery {
 	 *
 	 * @param string|array $dirs A directory path or an array of directories
 	 * @return BlobQuery The current BlobQuery instance
+	 * @api
 	 */
 	public function exclude($dirs) {
 		$this->notPaths = array_merge($this->notPaths, (array) $dirs);
@@ -193,6 +152,7 @@ class BlobQuery {
 	 * @param string|array $files the Files that should be included
 	 * @throws Exception
 	 * @return BlobQuery The current BlobQuery instance
+	 * @api
 	 */
 	public function with($files) {
 		foreach ((array) $files as $file) {
@@ -210,21 +170,20 @@ class BlobQuery {
 	 * @return array
 	 */
 	public function introspect() {
-		$this->scanForMatchingDerivativeBlobs();
-
+		$foundFiles = array();
 		//example
 		/** @var $file \SplFileInfo */
-		foreach ($this->finder as $file) {
-			$this->derivativeBlobs[] = $file->getPathname();
+		foreach ($this->getFinder() as $file) {
+			$foundFiles[] = $file->getPathname();
 		}
 
 		return array(
 			"derivative"      => '' . $this->derivative, //Get the string representation.
-			"derivativePath"  => $this->derivative->getAbsolutePath(),
-			"mediaType"       => $this->mediaTypeFilter,
-			"derivativeBlobs" => $this->derivativeBlobs,
-			"paths"           => $this->paths,
-			"notPaths"        => $this->notPaths,
+			//"derivativePath"  => $this->derivative->getAbsolutePath(),
+			//"mediaType"       => $this->mediaType,
+			"foundFiles" => $foundFiles,
+			//"paths"           => $this->paths,
+			//"notPaths"        => $this->notPaths,
 			"boilerplateKey"  => $this->boilerplateKey
 		);
 	}
@@ -239,17 +198,44 @@ class BlobQuery {
 //	}
 
 	/**
-	 * Takes the filters into account and initializes $this->derivativeBlobs with available files to be represented as derivativeBlobs.
+	 * This is a Finder Factory. It builds and returns a Symfony/Finder instance based on the
+	 * BlobQuery restrictions.
 	 *
-	 * This does not break each file into child derivativeBlobs, and it does not take into account derivativeBlobs that might span multiple
-	 * files.
+	 * @return Finder
 	 */
-	protected function scanForMatchingDerivativeBlobs() {
+	public function getFinder() {
 		$derivativePath = $this->derivative->getAbsolutePath();
+
+		$finder = new Finder();
+		$finder //setup the finder
+			->files()
+			->ignoreUnreadableDirs()
+			->useBestAdapter()//php adapter does not support glob on path() or notPath()
+
+			/* VCS files/folders are ignored by default, but could be disabled if needed */
+			//->ignoreVCS(FALSE)
+
+			/* Hidden Files are ignored by default, but we might want to include .htaccess or something.
+			   We could just not ignore the hidden files here, or make people be very explicit about adding
+			   a particular hidden file or folder: inHiddenDirectory() addHiddenFile() addHiddenFiles() */
+			//->ignoreDotFiles(FALSE)
+
+			/* Symlinks are disabled by default as a security precaution.
+			   However, if someone really needs symlinks, we'd need to make this configurable here.
+			   If we do enable symlinks, then we'll still have to make sure that the destination
+			   is "allowed" somehow. For example, a link to root '/' would be abusive.  */
+			//->followLinks()
+		;
 
 		//in() and with() haven't been called, so use the derivative root
 		if (!$this->paths && !$this->withFiles) {
-			$this->finder->in($derivativePath);
+			$finder->in($derivativePath);
+		}
+
+		$suffixes = MediaTypes::getFilenameExtensionsFromMediaType($this->mediaType);
+		/** @var string $suffix a file extension for this mediaType */
+		foreach ($suffixes as $suffix) {
+			$finder->name('*.' . $suffix); //Each call of name is like an "OR"
 		}
 
 		/** @var string $path a path relative to the derivativePath */
@@ -259,9 +245,9 @@ class BlobQuery {
 			//but using in() to provide multiple starting points means that the other files aren't
 			//even opened.
 			if ($this->stringLooksLikeRegex($path)) {
-				$this->finder->path($path);
+				$finder->path($path);
 			} else {
-				$this->finder->in(Files::concatenatePaths(array($derivativePath, $path)));
+				$finder->in(Files::concatenatePaths(array($derivativePath, $path)));
 			}
 		}
 
@@ -273,17 +259,19 @@ class BlobQuery {
 			//notPath(): If any of the directories in the absolute path match, they're excluded.
 			//           Strings or Regex only; No Glob.
 			if ($this->stringLooksLikeRegex($notPath)) {
-				$this->finder->notPath($notPath);
+				$finder->notPath($notPath);
 			} else {
-				$this->finder->exclude($notPath);
+				$finder->exclude($notPath);
 			}
 		}
 
 		/** @var string $pathname A path to a file including the filename, relative to derivativePath */
 		foreach ($this->withFiles as $relativePathname) {
 			$pathname = Files::concatenatePaths(array($derivativePath, $relativePathname));
-			$this->finder->append((array) $pathname);
+			$finder->append((array) $pathname);
 		}
+
+		return $finder;
 	}
 
 	/**

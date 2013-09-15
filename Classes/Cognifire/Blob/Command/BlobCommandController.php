@@ -71,17 +71,26 @@ class BlobCommandController extends CommandController {
 		;
 		$this->outputLine(print_r($d->introspect(), TRUE));
 
-		$d = new BlobQuery('Cognifire.Blob', 'application/x-php');
+		$d = new BlobQuery('Cognifire.Blob');
 		$d->in('Classes/Cognifire/Blob')
 		->exclude('Package')
 		->with('composer.json')
 		;
 		$this->outputLine(print_r($d->introspect(), TRUE));
 
-		$d = new BlobQuery('Cognifire.Blob', 'application/x-php');
+		$d = new BlobQuery('Cognifire.Blob');
 		$d->with('composer.json');
 		$this->outputLine(print_r($d->introspect(), TRUE));
+	}
 
+	public function newBqTestCommand() {
+		$d = new BlobQuery('Cognifire.Blob');
+		$d->in('Resources');
+		$this->outputLine(print_r($d->introspect(), TRUE));
+		touch('/www/dev.pahoran/Packages/Application/Cognifire.Blob/Resources/testFile');
+		$this->outputLine(print_r($d->introspect(), TRUE));
+		unlink('/www/dev.pahoran/Packages/Application/Cognifire.Blob/Resources/testFile');
+		$this->outputLine(print_r($d->introspect(), TRUE));
 	}
 }
 
