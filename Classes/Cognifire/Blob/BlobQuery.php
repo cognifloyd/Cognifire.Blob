@@ -16,7 +16,6 @@ use Cognifire\Blob\Domain\Model\Boilerplate;
 use Cognifire\Blob\Domain\Model\Derivative;
 use Cognifire\Blob\Utility\Files; //use TYPO3\Flow\Utility\Files;
 use Cognifire\Blob\Utility\MediaTypes; //use TYPO3\Flow\Utility\MediaTypes;
-use Cognifire\BuilderFoundation\Exception;
 use Symfony\Component\Finder\Finder;
 use TYPO3\Eel\FlowQuery\FlowQuery;
 use TYPO3\Flow\Annotations as Flow;
@@ -42,9 +41,9 @@ class BlobQuery {
 	 * The boilerplate that this BlobQuery is currently using
 	 * change using from()
 	 *
-	 * @var  string
+	 * @var  Boilerplate|NULL
 	 */
-	protected $boilerplate;
+	protected $boilerplate = NULL;
 
 	/**
 	 * File that match this Media/Mime Type will be provided to the FlowQuery object
@@ -168,6 +167,7 @@ class BlobQuery {
 	}
 
 	/**
+	 * identifies the boilerplate that blobs can be integrated from
 	 *
 	 * @param mixed|string|Boilerplate $boilerplate  The identifier for the derivative (use from() to change)
 	 * @throws Exception
@@ -188,13 +188,48 @@ class BlobQuery {
 		return $this;
 	}
 
-	public function integrate($preset) {
+	/**
+	 * integrate this preset from the Boilerplate into the Derivative
+	 *
+	 * @param string $presetName the name of a preset in the Boilerplate
+	 * @throws Exception
+	 * @return BlobQuery The current BlobQuery instance
+	 * @api
+	 */
+	public function integrate($presetName) {
+		$this->isIntegrable();
+		//add files that the preset copied to this BlobQuery's selected files
 		return $this;
 	}
 
+	/**
+	 * integrate these files from the Boilerplate into the Derivative
+	 *
+	 * @param string|array $files the Files that should be included
+	 * @throws Exception
+	 * @return BlobQuery The current BlobQuery instance
+	 * @api
+	 */
 	public function integrateFiles($files) {
+		$this->isIntegrable();
+
+		//TODO[cognifloyd] add logic to copy the $files from $boilerplate to $derivative
+
+		$this->with($files);
 
 		return $this;
+	}
+
+	/**
+	 * Checks this BlobQuery to see if it is ready to integrate a (part of a) boilerplate into a derivative
+	 *
+	 * @throws Exception
+	 * @return void
+	 */
+	protected function isIntegrable() {
+		if(is_null($this->boilerplate)) {
+			throw new Exception('You must first select a boilerplate package using from().', 1379216665);
+		}
 	}
 
 	/**
