@@ -22,6 +22,15 @@ use TYPO3\Flow\Utility\Files;
 /**
  * This service does the heavy lifting of copying things from a boilerplate to a derivative.
  *
+ * These services are not inherently part of a Boilerplate or a Derivative.
+ * The boilerplate may contain information about how to copy and modify sets of files (this is
+ * called a preset), but it does not care where it gets copied or how it gets copied. The derivative
+ * cares about which files came from which Boilerplates, and how they have been modified, but
+ * it does not care how those files get copied and modified.
+ *
+ * If any logic can be clearly assigned to a Boilerplate or a Derivative, then it should be there.
+ * Otherwise, it should be here.
+ *
  * @Flow\Scope("singleton")
  */
 class IntegratorService {
@@ -47,9 +56,9 @@ class IntegratorService {
 
 		foreach ($files as $boilerplateFile => $derivativeFile) {
 			if(!is_string($derivativeFile)) {
-				throw new Exception('An array of strings (file locations) must be provided, but ' . $type . ' was received.', 1379337925);
+				throw new Exception('An array of strings (file locations) must be provided, but ' . gettype($derivativeFile) . ' was received.', 1379337925);
 			}
-			switch(gettype($boilerplateFile)) {
+			switch($type = gettype($boilerplateFile)) {
 				case 'integer':
 					$boilerplateFile = Files::concatenatePaths(array($boilerplatePath, $derivativeFile));
 					break;
