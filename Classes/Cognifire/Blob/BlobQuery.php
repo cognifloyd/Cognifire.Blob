@@ -14,6 +14,7 @@ namespace Cognifire\Blob;
 
 use Cognifire\Blob\Domain\Model\Boilerplate;
 use Cognifire\Blob\Domain\Model\Derivative;
+use Cognifire\Blob\Domain\Service\IntegratorService;
 use Cognifire\Blob\Utility\Files; //use TYPO3\Flow\Utility\Files;
 use Cognifire\Blob\Utility\MediaTypes; //use TYPO3\Flow\Utility\MediaTypes;
 use Symfony\Component\Finder\Finder;
@@ -29,6 +30,12 @@ use TYPO3\Flow\Annotations as Flow;
  * Symfony/Finder is the core of BlobQuery, but BlobQuery provides the context and semantics.
  */
 class BlobQuery {
+
+	/**
+	 * @Flow\Inject
+	 * @var  IntegratorService
+	 */
+	protected $integrator;
 
 	/**
 	 * The derivative that this BlobQuery works on
@@ -214,6 +221,8 @@ class BlobQuery {
 		$this->isIntegrable();
 
 		//TODO[cognifloyd] add logic to copy the $files from $boilerplate to $derivative
+		//This belongs in an integration service
+		$this->integrator->copyFiles($files, $this->boilerplate, $this->derivative);
 
 		$this->with($files);
 
