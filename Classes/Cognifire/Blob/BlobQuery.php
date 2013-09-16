@@ -32,12 +32,6 @@ use TYPO3\Flow\Annotations as Flow;
 class BlobQuery {
 
 	/**
-	 * @Flow\Inject
-	 * @var  IntegratorService
-	 */
-	protected $integrator;
-
-	/**
 	 * The derivative that this BlobQuery works on
 	 *
 	 * @var Derivative
@@ -51,6 +45,12 @@ class BlobQuery {
 	 * @var  Boilerplate|NULL
 	 */
 	protected $boilerplate = NULL;
+
+	/**
+	 * @Flow\Inject
+	 * @var  IntegratorService
+	 */
+	protected $integrator;
 
 	/**
 	 * File that match this Media/Mime Type will be provided to the FlowQuery object
@@ -90,7 +90,7 @@ class BlobQuery {
 	 * @param mixed|string|Boilerplate $boilerplate  The identifier for the derivative (use from() to change)
 	 * @throws Exception
 	 */
-	public function __construct($derivative, $boilerplate = '') {
+	public function __construct($derivative, $boilerplate = NULL) {
 		if (is_string($derivative)) {
 			$this->derivative = new Derivative($derivative);
 		} elseif (is_object($derivative) && ('Derivative' === get_class($derivative))) {
@@ -102,7 +102,7 @@ class BlobQuery {
 			}
 			throw new Exception('BlobQuery requires a string or a Derivative, but ' . $type . ' was received.', 1375743984);
 		}
-		if($boilerplate !== '') {
+		if($boilerplate !== NULL) {
 			$this->from($boilerplate);
 		}
 	}
