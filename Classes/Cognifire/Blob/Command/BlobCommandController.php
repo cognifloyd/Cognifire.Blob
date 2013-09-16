@@ -92,6 +92,25 @@ class BlobCommandController extends CommandController {
 		unlink('/www/dev.pahoran/Packages/Application/Cognifire.Blob/Resources/testFile');
 		$this->outputLine(print_r($d->introspect(), TRUE));
 	}
+
+	public function copyFilesTestCommand() {
+		$d = new BlobQuery('Cognifire.Blob');
+		touch('/www/dev.pahoran/Packages/Application/Cognifire.Blob/Resources/testFile');
+		$d->from('Cognifire.Blob')
+			->integrateFiles(array(
+				'Resources/testFile' => 'Resources/testFile2'
+							 ));
+		$files = array();
+		/** @var $file \SplFileInfo */
+		foreach($d->getFinder() as $file) {
+			$files[] = $file->getPathname();
+		}
+
+		$this->outputLine(print_r($files, TRUE));
+
+		unlink('/www/dev.pahoran/Packages/Application/Cognifire.Blob/Resources/testFile');
+		unlink('/www/dev.pahoran/Packages/Application/Cognifire.Blob/Resources/testFile2');
+	}
 }
 
 ?>
