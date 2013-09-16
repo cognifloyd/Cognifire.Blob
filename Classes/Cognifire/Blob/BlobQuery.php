@@ -56,9 +56,9 @@ class BlobQuery {
 	 * File that match this Media/Mime Type will be provided to the FlowQuery object
 	 * This only supports one mediaType for now, but could be turned into an array to deal with more.
 	 *
-	 * @var string
+	 * @var array of strings
 	 */
-	protected $mediaType = '';
+	protected $mediaType = array();
 
 	/**
 	 * Files that are in any of these paths or path globs will be provided to the FlowQuery object
@@ -115,14 +115,13 @@ class BlobQuery {
 
 	/**
 	 * Retrieve only the files of this media type.
-	 * This only allows for one mediaType at a time.
 	 *
-	 * @param string $mediaType
+	 * @param string|array $mediaType the mediaTypes that may be used.
 	 * @return BlobQuery The current BlobQuery instance
 	 * @api
 	 */
 	public function ofMediaType($mediaType) {
-		$this->mediaType = $mediaType;
+		$this->mediaType = (array) $mediaType;
 		return $this;
 	}
 
@@ -317,7 +316,12 @@ class BlobQuery {
 			$finder->in($derivativePath);
 		}
 
-		$suffixes = MediaTypes::getFilenameExtensionsFromMediaType($this->mediaType);
+		$suffixes = array();
+		/** @var string $mediaType an IANA media type string */
+		foreach ($this->mediaType as $mediaType) {
+			$suffixes = array_merge($suffixes, MediaTypes::getFilenameExtensionsFromMediaType($mediaType));
+		}
+
 		/** @var string $suffix a file extension for this mediaType */
 		foreach ($suffixes as $suffix) {
 			$finder->name('*.' . $suffix); //Each call of name is like an "OR"
