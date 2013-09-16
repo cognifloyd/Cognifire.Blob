@@ -13,7 +13,11 @@ namespace Cognifire\Blob\Domain\Service;
  *                                                                        */
 
 
+use Cognifire\Blob\Domain\Model\Boilerplate;
+use Cognifire\Blob\Domain\Model\Derivative;
+use Cognifire\Blob\Exception;
 use TYPO3\Flow\Annotations as Flow;
+use TYPO3\Flow\Utility\Files;
 
 /**
  * This service does the heavy lifting of copying things from a boilerplate to a derivative.
@@ -22,4 +26,50 @@ use TYPO3\Flow\Annotations as Flow;
  */
 class IntegratorService {
 
+	/**
+	 * This copies the indicated files or directories from Boilerplate to Derivative.
+	 *
+	 * If numeric keys are provided, then boilerplate and derivative locations are the same.
+	 *   $files = array( 'Resources/FooBar.html' )
+	 *
+	 * If string keys are provided, then the key is the boilerplate location, and the
+	 * value is the derivative location.
+	 *   $files = array( 'Resources/Classes/FooBar.php' => 'Classes/Vendor/Package/FooBar.php' )
+	 *
+	 * @param $boilerplate Boilerplate Copy from this boilerplate package
+	 * @param $derivative  Derivative  To this derivative package
+	 * @param $files       array       An array of files to be copied
+	 * @throws Exception
+	 */
+	public function copyFiles(Boilerplate $boilerplate, Derivative $derivative, array $files) {
+		$boilerplatePath = $boilerplate->getAbsolutePath();
+		$derivativePath = $derivative->getAbsolutePath();
+
+		foreach ($files as $boilerplateFile => $derivativeFile) {
+			if(!is_string($derivativeFile)) {
+				throw new Exception('An array of strings (file locations) must be provided, but ' . $type . ' was received.', 1379337925);
+			}
+			switch(gettype($boilerplateFile)) {
+				case 'integer':
+					$boilerplateFile = Files::concatenatePaths(array($boilerplatePath, $derivativeFile));
+					break;
+				case 'string':
+					$boilerplateFile = Files::concatenatePaths(array($boilerplatePath, $boilerplateFile));
+					break;
+				default:
+					throw new Exception('An array of strings (file locations) must be provided with either integer or string keys, but a key of type ' . $type . ' was received.', 1379337776);
+			}
+			$derivativeFile = Files::concatenatePaths(array($derivativePath, $derivativeFile));
+
+			if(!file_exists($boilerplateFile)) {
+				throw new Exception('The boilerplate file or directory, ' . $boilerplateFile . ' does not exist!', 1379338198);
+			}
+
+			if(is_dir($boilerplateFile)) {
+				Files::copyDirectoryRecursively($boilerplateFile, $derivativeFile);
+			} else {
+				copy($boilerplateFile, $derivativeFile);
+			}
+		}
+	}
 }

@@ -212,20 +212,28 @@ class BlobQuery {
 	/**
 	 * integrate these files from the Boilerplate into the Derivative
 	 *
-	 * @param string|array $files the Files that should be included
+	 * If a single file is provided in a string, then that file will be copied from
+	 * the boilerplate to the derivative. For example, the following will copy FooBar.html
+	 * from the Boilerplate's Resources folder to the Derivative's Resources folder.
+	 *   $files = 'Resources/FooBar.html'
+	 *
+	 * If an array of files is provided, and the keys are integers, then each file
+	 * in the array will be copied from boilerplate to derivative.
+	 *   $files = array( 'Resources/FooBar.html', 'Resources/Baz.html' )
+	 *
+	 * If, however, an array of files is provided that has strings for keys, then the string
+	 * should be a file in the Boilerplate, and the value should be the derivative file's location.
+	 *   $files = array( 'Resources/Classes/FooBar.php' => 'Classes/Vendor/Package/FooBar.php' )
+	 *
+	 * @param string|array $files a file, or an array of files, to be copied to the derivative.
 	 * @throws Exception
 	 * @return BlobQuery The current BlobQuery instance
 	 * @api
 	 */
 	public function integrateFiles($files) {
 		$this->isIntegrable();
-
-		//TODO[cognifloyd] add logic to copy the $files from $boilerplate to $derivative
-		//This belongs in an integration service
-		$this->integrator->copyFiles($files, $this->boilerplate, $this->derivative);
-
-		$this->with($files);
-
+		$this->integrator->copyFiles($this->boilerplate, $this->derivative, (array) $files);
+		$this->with(array_values((array) $files));
 		return $this;
 	}
 
