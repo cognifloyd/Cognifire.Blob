@@ -133,14 +133,4 @@ class Derivative {
 		return $this->derivativeKey;
 	}
 
-	/**
-	 * Temporary method to assist in manually testing.
-	 *
-	 * @return array
-	 */
-	public function introspect() {
-		return array(
-		);
-	}
-
 }
