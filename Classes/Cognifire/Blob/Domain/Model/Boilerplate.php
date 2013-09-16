@@ -46,6 +46,14 @@ class Boilerplate {
 	protected $absolutePath = '';
 
 	/**
+	 * an collection of the Presets that are available in this boilerplate.
+	 * key = name of preset (should be unique per boilerplate package)
+	 * value = a Preset object.
+	 * @var  array<PresetInterface>
+	 */
+	protected $presets = array();
+
+	/**
 	 * Boilerplate constructor
 	 *
 	 * The boilerplateKey should be a valid Flow package key.
@@ -85,6 +93,15 @@ class Boilerplate {
 	 */
 	public function getAbsolutePath() {
 		return $this->absolutePath;
+	}
+
+	/**
+	 *
+	 * @param string $presetName
+	 * @return PresetInterface
+	 */
+	public function getPreset($presetName) {
+		return $this->presets[$presetName];
 	}
 
 	/**
