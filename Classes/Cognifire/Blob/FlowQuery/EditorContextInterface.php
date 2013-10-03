@@ -16,9 +16,9 @@ namespace Cognifire\Blob\FlowQuery;
 use TYPO3\Flow\Annotations as Flow;
 
 /**
- * Developers should not implement this interface. Instead, extend the AbstractBuilderContext.
+ * Developers should not implement this interface. Instead, extend the AbstractEditorContext.
  */
-interface BuilderContextInterface extends \Traversable {
+interface EditorContextInterface extends \Traversable {
 
 	/**
 	 * Returns the mediaType that this context contains.

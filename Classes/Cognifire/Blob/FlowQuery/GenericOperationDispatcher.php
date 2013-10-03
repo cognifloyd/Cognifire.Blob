@@ -110,7 +110,7 @@ class GenericOperationDispatcher extends AbstractOperation {
 	 * @return mixed|null if the operation is final, the return value
 	 */
 	public function evaluate(FlowQuery $flowQuery, array $arguments) {
-		/** @var BuilderContextInterface $context */
+		/** @var EditorContextInterface $context */
 		$context = $flowQuery->getContext();
 		$contextMediaType = $context->getMediaType();
 		if($this->mediaType !== $contextMediaType) {

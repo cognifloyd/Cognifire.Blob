@@ -126,7 +126,7 @@ class OperationResolver extends FlowQueryOperationResolver {
 
 	/**
 	 *
-	 * @param BuilderContextInterface $context
+	 * @param EditorContextInterface $context
 	 * @return string
 	 */
 	protected function getContextMediaType($context) {
@@ -139,6 +139,6 @@ class OperationResolver extends FlowQueryOperationResolver {
 	 * @return boolean
 	 */
 	protected function contextIsBuilderContext($context) {
-		return ($context instanceof BuilderContextInterface);
+		return ($context instanceof EditorContextInterface);
 	}
 }

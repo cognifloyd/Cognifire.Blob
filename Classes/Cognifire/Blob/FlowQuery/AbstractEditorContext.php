@@ -18,11 +18,11 @@ use TYPO3\Flow\Annotations as Flow;
 /**
  * This is a FlowQuery context through which builders can access/edit sets of files.
  *
- * Builder packages should provide one AbstractBuilderContext for each mediaType that the Builder understands.
+ * Builder packages should provide one AbstractEditorContext for each mediaType that the Builder understands.
  *
  * @api
  */
-abstract class AbstractBuilderContext implements BuilderContextInterface {
+abstract class AbstractEditorContext implements EditorContextInterface {
 
 	/**
 	 * The mediaType that this context can handle.
