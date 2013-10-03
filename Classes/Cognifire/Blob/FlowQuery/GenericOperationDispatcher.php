@@ -13,6 +13,7 @@ namespace Cognifire\Blob\FlowQuery;
  *                                                                        */
 
 
+use Cognifire\Blob\Exception;
 use TYPO3\Eel\FlowQuery\FlowQuery;
 use TYPO3\Eel\FlowQuery\Operations\AbstractOperation;
 use TYPO3\Flow\Annotations as Flow;
@@ -105,14 +106,28 @@ class GenericOperationDispatcher extends AbstractOperation {
 	 *
 	 * @param FlowQuery $flowQuery the FlowQuery object
 	 * @param array     $arguments the arguments for this operation
+	 * @throws Exception
 	 * @return mixed|null if the operation is final, the return value
 	 */
 	public function evaluate(FlowQuery $flowQuery, array $arguments) {
+		/** @var BuilderContextInterface $context */
 		$context = $flowQuery->getContext();
+		$contextMediaType = $context->getMediaType();
+		if($this->mediaType !== $contextMediaType) {
+			throw new Exception(sprintf('This operation only works with the %s mediaType, but %s was provided. The operationResolver should have prevented this error.', $this->mediaType, $contextMediaType), 1380812975);
+		}
+
+		/** @var mixed|NULL $evaluationResult This is a final result, or if not final, the context should be modified, and this will be NULL. */
+		$evaluationResult = $context->evaluateOperation($this->operationName, $arguments, $this->operationMethod, $this->operationClassName);
+		if($this->operationIsFinal) {
+			return $evaluationResult;
+		}
 
 		//TODO[cognifloyd] How does the callback interact with the context?
-		$callback = array($this->operationClassName, $this->operationMethod);
-		call_user_func_array($callback, $arguments);
+		// Should I move this into the context? I can't depend on everything that needs to interact with the context
+		// going through this GenericOperationDispatcher, so this should probably move into the context.
+		// Maybe it doesn't make sense to require specifying the className. Instead, we just pass the operationName
+		// to the context, and let it figure out which class it needs to run it on.
 
 		$flowQuery->setContext($context);
 		return $flowQuery;

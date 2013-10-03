@@ -22,7 +22,7 @@ use TYPO3\Flow\Annotations as Flow;
  *
  * @api
  */
-abstract class AbstractBuilderContext implements \ArrayAccess, BuilderContextInterface {
+abstract class AbstractBuilderContext implements BuilderContextInterface {
 
 	/**
 	 * The mediaType that this context can handle.
@@ -56,6 +56,15 @@ abstract class AbstractBuilderContext implements \ArrayAccess, BuilderContextInt
 	 */
 	static public function getMediaType() {
 		return static::$mediaType;
+	}
+
+	/**
+	 *
+	 */
+	public function evaluateOperation($operationName, $arguments, $operationMethod, $operationClassName) {
+		//This will actually be called on querypath or whatever is used to edit files.
+		$callback = array($operationClassName, $operationMethod);
+		call_user_func_array($callback, $arguments);
 	}
 
 	/**

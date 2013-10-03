@@ -18,7 +18,7 @@ use TYPO3\Flow\Annotations as Flow;
 /**
  * Developers should not implement this interface. Instead, extend the AbstractBuilderContext.
  */
-interface BuilderContextInterface {
+interface BuilderContextInterface extends \ArrayAccess, \Traversable {
 
 	/**
 	 * Returns the mediaType that this context contains.
@@ -26,5 +26,10 @@ interface BuilderContextInterface {
 	 * @return string
 	 */
 	static public function getMediaType();
+
+	/**
+	 * Evaluates the operation in this context.
+	 */
+	public function evaluateOperation($operationName, $arguments, $operationMethod, $operationClassName);
 
 }
