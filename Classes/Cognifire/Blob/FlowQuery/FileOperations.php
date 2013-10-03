@@ -1,5 +1,5 @@
 <?php
-namespace Cognifire\Blob;
+namespace Cognifire\Blob\FlowQuery;
 
 /*                                                                        *
  * This script belongs to the TYPO3 Flow package                          *
@@ -15,6 +15,7 @@ namespace Cognifire\Blob;
 use Cognifire\Blob\Domain\Model\Boilerplate;
 use Cognifire\Blob\Domain\Model\Derivative;
 use Cognifire\Blob\Domain\Service\IntegratorService;
+use Cognifire\Blob\Exception;
 use Cognifire\Blob\Utility\Files; //use TYPO3\Flow\Utility\Files;
 use Cognifire\Blob\Utility\MediaTypes; //use TYPO3\Flow\Utility\MediaTypes;
 use Symfony\Component\Finder\Finder;
@@ -22,24 +23,24 @@ use TYPO3\Eel\FlowQuery\FlowQuery;
 use TYPO3\Flow\Annotations as Flow;
 
 /**
- * BlobQuery is a FlowQuery factory. The returned FlowQuery instance will contain all of the Blobs
+ * FileOperations is a Symfony/Finder factory. The returned FlowQuery instance will contain all of the files
  * from the given package that match the glob or mediaType filters.
  *
- * Each BlobQuery instance can only work with blobs from a single package at a time.
+ * Each FileOperations instance can only work with files from a single package at a time.
  *
- * Symfony/Finder is the core of BlobQuery, but BlobQuery provides the context and semantics.
+ * Symfony/Finder is the core of FileOperations, but FileOperations provides the context and semantics.
  */
-class BlobQuery {
+class FileOperations {
 
 	/**
-	 * The derivative that this BlobQuery works on
+	 * The derivative that this FileOperations works on
 	 *
 	 * @var Derivative
 	 */
 	protected $derivative;
 
 	/**
-	 * The boilerplate that this BlobQuery is currently using
+	 * The boilerplate that this FileOperations is currently using
 	 * change using from()
 	 *
 	 * @var  Boilerplate|NULL
@@ -53,15 +54,14 @@ class BlobQuery {
 	protected $integrator;
 
 	/**
-	 * File that match this Media/Mime Type will be provided to the FlowQuery object
-	 * This only supports one mediaType for now, but could be turned into an array to deal with more.
+	 * Only files that match this Media/Mime Type will be included in Finder.
 	 *
 	 * @var array of strings
 	 */
 	protected $mediaType = array();
 
 	/**
-	 * Files that are in any of these paths or path globs will be provided to the FlowQuery object
+	 * Files that are in any of these paths or path globs will be included in Finder.
 	 * These paths are relative to the derivative's root directory.
 	 * Note that symlinks and dot files are ignored (.. and . references are not allowed).
 	 *
@@ -70,7 +70,7 @@ class BlobQuery {
 	protected $paths = array();
 
 	/**
-	 * Files that are in any of these paths or path globs will not be provided to the FlowQuery object.
+	 * Files that are in any of these paths or path globs will not be included in Finder.
 	 * These paths are relative to the derivative's root directory.
 	 * Note that symlinks and dot files are ignored (.. and . references are not allowed).
 	 *
@@ -100,24 +100,18 @@ class BlobQuery {
 			if ('object' === $type) {
 				$type .= ' of class ' . get_class($derivative);
 			}
-			throw new Exception('BlobQuery requires a string or a Derivative, but ' . $type . ' was received.', 1375743984);
+			throw new Exception('FileOperations requires a string or a Derivative, but ' . $type . ' was received.', 1375743984);
 		}
 		if($boilerplate !== NULL) {
 			$this->from($boilerplate);
 		}
 	}
 
-//	public function initializeObject() {
-//		$this->setupFinder();
-//		//don't scan till needed
-//		$this->newFinder();
-//	}
-
 	/**
 	 * Retrieve only the files of this media type.
 	 *
 	 * @param string|array $mediaType the mediaTypes that may be used.
-	 * @return BlobQuery The current BlobQuery instance
+	 * @return FileOperations The current FileOperations instance
 	 * @api
 	 */
 	public function ofMediaType($mediaType) {
@@ -126,12 +120,12 @@ class BlobQuery {
 	}
 
 	/**
-	 * Restrict blobs to files that are in this directory or set of directories.
+	 * Restrict to files that are in this directory or set of directories.
 	 *
 	 * @see Finder->in() and Finder->path()
 	 *
 	 * @param string|array $dirs A directory path or an array of directories
-	 * @return BlobQuery The current BlobQuery instance
+	 * @return FileOperations The current FileOperations instance
 	 * @api
 	 */
 	public function in($dirs) {
@@ -140,13 +134,13 @@ class BlobQuery {
 	}
 
 	/**
-	 * Restrict blobs to files that are not in this directory or set of directories.
+	 * Restrict files that are not in this directory or set of directories.
 	 * The given directories must be relative to the derivative root.
 	 *
 	 * @see Finder->exclude() and Finder->notPath()
 	 *
 	 * @param string|array $dirs A directory path or an array of directories
-	 * @return BlobQuery The current BlobQuery instance
+	 * @return FileOperations The current FileOperations instance
 	 * @api
 	 */
 	public function exclude($dirs) {
@@ -159,7 +153,7 @@ class BlobQuery {
 	 *
 	 * @param string|array $files the Files that should be included
 	 * @throws Exception
-	 * @return BlobQuery The current BlobQuery instance
+	 * @return FileOperations The current FileOperations instance
 	 * @api
 	 */
 	public function with($files) {
@@ -173,7 +167,7 @@ class BlobQuery {
 	}
 
 	/**
-	 * identifies the boilerplate that blobs can be integrated from
+	 * identifies the boilerplate that files can be integrated from
 	 *
 	 * @param mixed|string|Boilerplate $boilerplate  The identifier for the derivative (use from() to change)
 	 * @throws Exception
@@ -189,7 +183,7 @@ class BlobQuery {
 			if ('object' === $type) {
 				$type .= ' of class ' . get_class($boilerplate);
 			}
-			throw new Exception('BlobQuery requires a string packageKey or a Boilerplate object to identify the boilerplate package, but ' . $type . ' was received.', 1375743984);
+			throw new Exception('FileOperations requires a string packageKey or a Boilerplate object to identify the boilerplate package, but ' . $type . ' was received.', 1375743984);
 		}
 		return $this;
 	}
@@ -199,12 +193,12 @@ class BlobQuery {
 	 *
 	 * @param string $presetName the name of a preset in the Boilerplate
 	 * @throws Exception
-	 * @return BlobQuery The current BlobQuery instance
+	 * @return FileOperations The current FileOperations instance
 	 * @api
 	 */
 	public function integrate($presetName) {
 		$this->isIntegrable();
-		//add files that the preset copied to this BlobQuery's selected files
+		//add files that the preset copied to this FileOperations's selected files
 		return $this;
 	}
 
@@ -226,7 +220,7 @@ class BlobQuery {
 	 *
 	 * @param string|array $files a file, or an array of files, to be copied to the derivative.
 	 * @throws Exception
-	 * @return BlobQuery The current BlobQuery instance
+	 * @return FileOperations The current FileOperations instance
 	 * @api
 	 */
 	public function integrateFiles($files) {
@@ -237,7 +231,7 @@ class BlobQuery {
 	}
 
 	/**
-	 * Checks this BlobQuery to see if it is ready to integrate a (part of a) boilerplate into a derivative
+	 * Checks this FileOperations to see if it is ready to integrate a (part of a) boilerplate into a derivative
 	 *
 	 * @throws Exception
 	 * @return void
@@ -249,7 +243,7 @@ class BlobQuery {
 	}
 
 	/**
-	 * This should return some metadata about what packages, files, etc that have been selected in this BlobQuery.
+	 * This should return some metadata about what packages, files, etc that have been selected in this FileOperations.
 	 *
 	 * @return array
 	 */
@@ -273,17 +267,8 @@ class BlobQuery {
 	}
 
 	/**
-	 * Creates a FlowQuery with the derivativeBlobs
-	 *
-	 * @return FlowQuery
-	 */
-//	public function getFlowQuery() {
-//		return new FlowQuery($this->derivativeBlobs);
-//	}
-
-	/**
 	 * This is a Finder Factory. It builds and returns a Symfony/Finder instance based on the
-	 * BlobQuery restrictions.
+	 * FileOperations restrictions.
 	 *
 	 * @return Finder
 	 */

@@ -6,7 +6,7 @@ namespace Cognifire\Blob\Command;
  *                                                                        *
  *                                                                        */
 
-use Cognifire\Blob\BlobQuery;
+use Cognifire\Blob\FlowQuery\FileOperations;
 use Cognifire\Blob\Domain\Model\Derivative;
 use TYPO3\Flow\Annotations as Flow;
 use TYPO3\Flow\Cli\CommandController;
@@ -60,31 +60,31 @@ class BlobCommandController extends CommandController {
 	}
 
 	public function newBlobQueryCommand() {
-		$d = new BlobQuery('Cognifire.Blob');
+		$d = new FileOperations('Cognifire.Blob');
 		$d->exclude('Classes')
 		->exclude('/.*L.*/')
 		;
 		$this->outputLine(print_r($d->introspect(), TRUE));
 
-		$d = new BlobQuery('Cognifire.Blob');
+		$d = new FileOperations('Cognifire.Blob');
 		$d->ofMediaType('text/html')
 		;
 		$this->outputLine(print_r($d->introspect(), TRUE));
 
-		$d = new BlobQuery('Cognifire.Blob');
+		$d = new FileOperations('Cognifire.Blob');
 		$d->in('Classes/Cognifire/Blob')
 		->exclude('Package')
 		->with('composer.json')
 		;
 		$this->outputLine(print_r($d->introspect(), TRUE));
 
-		$d = new BlobQuery('Cognifire.Blob');
+		$d = new FileOperations('Cognifire.Blob');
 		$d->with('composer.json');
 		$this->outputLine(print_r($d->introspect(), TRUE));
 	}
 
 	public function newBqTestCommand() {
-		$d = new BlobQuery('Cognifire.Blob');
+		$d = new FileOperations('Cognifire.Blob');
 		$d->in('Resources');
 		$this->outputLine(print_r($d->introspect(), TRUE));
 		touch('/www/dev.pahoran/Packages/Application/Cognifire.Blob/Resources/testFile');
@@ -94,7 +94,7 @@ class BlobCommandController extends CommandController {
 	}
 
 	public function copyFilesTestCommand() {
-		$d = new BlobQuery('Cognifire.Blob');
+		$d = new FileOperations('Cognifire.Blob');
 		touch('/www/dev.pahoran/Packages/Application/Cognifire.Blob/Resources/testFile');
 		$d->from('Cognifire.Blob')
 			->integrateFiles(array(
