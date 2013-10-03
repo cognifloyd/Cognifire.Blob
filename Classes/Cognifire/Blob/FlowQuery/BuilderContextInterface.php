@@ -18,7 +18,7 @@ use TYPO3\Flow\Annotations as Flow;
 /**
  * Developers should not implement this interface. Instead, extend the AbstractBuilderContext.
  */
-interface BuilderContextInterface extends \ArrayAccess, \Traversable {
+interface BuilderContextInterface extends \Traversable {
 
 	/**
 	 * Returns the mediaType that this context contains.
