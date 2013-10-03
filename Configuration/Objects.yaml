@@ -1,0 +1,6 @@
+#                                                                          #
+# Object Configuration for the TYPO3.Eel package                           #
+#                                                                          #
+
+TYPO3\Eel\FlowQuery\OperationResolverInterface:
+  className: Cognifire\Blob\FlowQuery\OperationResolver
