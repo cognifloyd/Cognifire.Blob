@@ -1,0 +1,15 @@
+TYPO3:
+  Flow:
+    package:
+      packagesPathByType:
+        'typo3-flow-boilerplate': 'Boilerplates'
+
+Cognifire:
+  Blob:
+    operationMethodMap:
+#      'operationName':
+#        'mediaType': #May be '*' if it applies to everything. This is effectively what most FlowQuery operations are.
+#          10: #Priority
+#            final: boolean
+#            className: 'class that implements the method'
+#            methodAlias: 'methodAlias' #optional
