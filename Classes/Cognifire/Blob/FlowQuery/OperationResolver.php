@@ -16,6 +16,7 @@ namespace Cognifire\Blob\FlowQuery;
 use TYPO3\Eel\FlowQuery\OperationInterface;
 use TYPO3\Eel\FlowQuery\OperationResolver as FlowQueryOperationResolver;
 use TYPO3\Flow\Annotations as Flow;
+use TYPO3\Flow\Object\ObjectManager;
 
 /**
  * This operation resolver supports multiple operations in a single class.
@@ -70,19 +71,23 @@ class OperationResolver extends FlowQueryOperationResolver {
 	 * @return OperationInterface the resolved operation
 	 */
 	public function resolveOperation($operationName, $context) {
-		if ($this->operationIsRegistered($operationName) && $this->operationCanEvaluateOnContext($operationName, $context)) {
-			$operationMediaType = $this->getContextMediaType($context);
-			$highestPriority = max(array_keys($this->operationMethodMap[$operationName][$operationMediaType]));
-			return $this->dispatchOperation($operationName, $operationMediaType, $highestPriority);
+
+		if ($this->contextIsBuilderContext($context) //this must be checked first, as operationCanEvaluateOnContext depends on it
+			&& $this->operationIsRegistered($operationName)
+			&& $this->operationCanEvaluateOnContext($operationName, $context)) {
+
+				$operationMediaType = $this->getContextMediaType($context);
+				$highestPriority = max(array_keys($this->operationMethodMap[$operationName][$operationMediaType]));
+				return $this->dispatchOperation($operationName, $operationMediaType, $highestPriority);
         }
         return parent::resolveOperation($operationName, $context);
 	}
 
 	/**
 	 *
-	 * @param $operationName      string
-	 * @param $operationMediaType string
-	 * @param $priority           integer
+	 * @param string  $operationName
+	 * @param string  $operationMediaType
+	 * @param integer $priority
 	 * @return GenericOperationDispatcher
 	 */
 	protected function dispatchOperation($operationName, $operationMediaType, $priority) {
@@ -92,7 +97,7 @@ class OperationResolver extends FlowQueryOperationResolver {
 	/**
 	 * Checks to see if the operation is registered in the operationMethodMap
 	 *
-	 * @param $operationName
+	 * @param string $operationName
 	 * @return bool
 	 */
 	protected function operationIsRegistered($operationName) {
@@ -104,8 +109,8 @@ class OperationResolver extends FlowQueryOperationResolver {
 
 	/**
 	 *
-	 * @param $operationName string operation to test
-	 * @param $context       array  the context this operation needs to work on
+	 * @param string      $operationName operation to test
+	 * @param array|mixed $context       the context this operation needs to work on
 	 * @return boolean
 	 */
 	protected function operationCanEvaluateOnContext($operationName, $context) {
@@ -121,11 +126,19 @@ class OperationResolver extends FlowQueryOperationResolver {
 
 	/**
 	 *
-	 * @param $context array
+	 * @param BuilderContextInterface $context
 	 * @return string
 	 */
 	protected function getContextMediaType($context) {
-		//TODO[cognifloyd] Not implemented!
-		return '';
+		return $context->getMediaType();
+	}
+
+	/**
+	 *
+	 * @param array|mixed $context
+	 * @return boolean
+	 */
+	protected function contextIsBuilderContext($context) {
+		return ($context instanceof BuilderContextInterface);
 	}
 }

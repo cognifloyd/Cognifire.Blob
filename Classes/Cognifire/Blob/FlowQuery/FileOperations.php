@@ -54,7 +54,7 @@ class FileOperations {
 	protected $integrator;
 
 	/**
-	 * Only files that match this Media/Mime Type will be included in Finder.
+	 * Only files that match these Media/Mime Type will be included in Finder.
 	 *
 	 * @var array of strings
 	 */
