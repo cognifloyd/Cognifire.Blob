@@ -87,15 +87,15 @@ class BlobCommandController extends CommandController {
 		$d = new FileOperations('Cognifire.Filefish');
 		$d->in('Resources');
 		$this->outputLine(print_r($d->introspect(), TRUE));
-		touch('/www/dev.pahoran/Packages/Application/Cognifire.Filefish/Resources/testFile');
+		touch(FLOW_PATH_PACKAGES . 'Application/Cognifire.Filefish/Resources/testFile');
 		$this->outputLine(print_r($d->introspect(), TRUE));
-		unlink('/www/dev.pahoran/Packages/Application/Cognifire.Filefish/Resources/testFile');
+		unlink(FLOW_PATH_PACKAGES . 'Application/Cognifire.Filefish/Resources/testFile');
 		$this->outputLine(print_r($d->introspect(), TRUE));
 	}
 
 	public function copyFilesTestCommand() {
 		$d = new FileOperations('Cognifire.Filefish');
-		touch('/www/dev.pahoran/Packages/Application/Cognifire.Filefish/Resources/testFile');
+		touch(FLOW_PATH_PACKAGES . 'Application/Cognifire.Filefish/Resources/testFile');
 		$d->from('Cognifire.Filefish')
 			->integrateFiles(array(
 				'Resources/testFile' => 'Resources/testFile2'
@@ -108,8 +108,8 @@ class BlobCommandController extends CommandController {
 
 		$this->outputLine(print_r($files, TRUE));
 
-		unlink('/www/dev.pahoran/Packages/Application/Cognifire.Filefish/Resources/testFile');
-		unlink('/www/dev.pahoran/Packages/Application/Cognifire.Filefish/Resources/testFile2');
+		unlink(FLOW_PATH_PACKAGES . 'Application/Cognifire.Filefish/Resources/testFile');
+		unlink(FLOW_PATH_PACKAGES . 'Application/Cognifire.Filefish/Resources/testFile2');
 	}
 }
 
