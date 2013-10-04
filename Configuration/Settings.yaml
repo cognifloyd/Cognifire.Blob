@@ -5,7 +5,7 @@ TYPO3:
         'typo3-flow-boilerplate': 'Boilerplates'
 
 Cognifire:
-  Blob:
+  Filefish:
     operationMethodMap:
 #      'operationName':
 #        'mediaType': #May be '*' if it applies to everything. This is effectively what most FlowQuery operations are.

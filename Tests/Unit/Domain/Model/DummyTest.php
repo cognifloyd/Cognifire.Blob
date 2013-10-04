@@ -1,8 +1,8 @@
 <?php
-namespace Cognifire\Blob\Tests\Unit\Domain\Model;
+namespace Cognifire\Filefish\Tests\Unit\Domain\Model;
 
 /*                                                                        *
- * This script belongs to the TYPO3 Flow package "Cognifire.Blob".        *
+ * This script belongs to the TYPO3 Flow package "Cognifire.Filefish".        *
  *                                                                        *
  *                                                                        */
 

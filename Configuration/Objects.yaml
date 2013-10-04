@@ -3,4 +3,4 @@
 #                                                                          #
 
 TYPO3\Eel\FlowQuery\OperationResolverInterface:
-  className: Cognifire\Blob\FlowQuery\OperationResolver
+  className: Cognifire\Filefish\FlowQuery\OperationResolver
