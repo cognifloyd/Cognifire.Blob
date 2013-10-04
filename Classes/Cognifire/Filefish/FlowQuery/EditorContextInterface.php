@@ -17,7 +17,7 @@ use TYPO3\Flow\Annotations as Flow;
 /**
  * Developers should not implement this interface. Instead, extend the AbstractEditorContext.
  */
-interface EditorContextInterface extends \Traversable {
+interface EditorContextInterface extends \IteratorAggregate {
 
 	/**
 	 * Returns the mediaType that this context contains.

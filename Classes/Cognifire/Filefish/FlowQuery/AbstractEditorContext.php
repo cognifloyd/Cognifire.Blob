@@ -12,6 +12,7 @@ namespace Cognifire\Filefish\FlowQuery;
  *                                                                        */
 
 
+use Traversable;
 use TYPO3\Flow\Annotations as Flow;
 
 /**
@@ -58,12 +59,18 @@ abstract class AbstractEditorContext implements EditorContextInterface {
 	}
 
 	/**
-	 *
+	 * Evaluates the operation in this context.
 	 */
-	public function evaluateOperation($operationName, $arguments, $operationMethod, $operationClassName) {
+    abstract public function evaluateOperation($operationName, $arguments, $operationMethod, $operationClassName); /* {
 		//This will actually be called on querypath or whatever is used to edit files.
-		$callback = array($operationClassName, $operationMethod);
-		call_user_func_array($callback, $arguments);
-	}
+		//$callback = array($operationClassName, $operationMethod);
+		//call_user_func_array($callback, $arguments);
+	}*/
 
+	/**
+	 * Retrieve an external iterator
+	 *
+	 * @return Traversable An instance of an object implementing Iterator or Traversable
+	 */
+	abstract public function getIterator();
 }
